@@ -1,0 +1,57 @@
+# Compiles slides.pdf and uploads it as an artifact
+
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # Download and unzip Typst
+      - name: Download Typst
+        run: |
+          curl -L https://github.com/typst/typst/releases/download/v0.10.0/typst-x86_64-unknown-linux-musl.tar.xz -o typst.tar.xz
+          tar -xvf typst.tar.xz
+
+      # Compile slides.pdf
+      - name: Compile Document
+        run: ./typst-x86_64-unknown-linux-musl/typst compile slides.typ
+
+      # Copy over slides.pdf and README.md to public directory
+      - name: Build public directory
+        run: |
+          mkdir public
+          cp slides.pdf public/
+
+      # Upload GitHub pages artifact
+      - uses: actions/upload-pages-artifact@v1
+        with:
+          path: public
+
+  # Deploy GitHub pages site
+  deploy:
+    needs: build
+
+    if: github.ref == 'refs/heads/main'
+
+    permissions:
+      pages: write      
+      id-token: write 
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
+
