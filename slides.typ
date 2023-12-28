@@ -26,8 +26,29 @@
 ]
 
 #slide[
-  = Folklore Slide
-  ...
+    = Folklore
+
+    #v(0.5em)
+
+    #let pro(txt) = align(left, [#text(olive, "✓") #txt])
+    #let con(txt) = align(left, [#text(red, "✗") #txt])
+
+    #align(center, grid(
+        columns: 2,
+        column-gutter: 6em,
+        row-gutter: 1em,
+        [*Refinement Types*],
+        [*Dependent Types*],
+        only("2-", pro[High automation]),
+        only("3-", con[Low automation]),
+        only("4-", con[Low expressivity]),
+        only("5-", pro[High expressivity]),
+        only("6-", con[Big TCB]),
+        only("7-", pro[Small TCB])
+    ))
+
+    #only("8-", align(bottom, 
+        cite(<ftrs>, style: "chicago-fullnotes")))
 ]
 
 #slide[
@@ -59,3 +80,5 @@
   = Questions
   ...
 ]
+
+#bibliography("references.bib")
