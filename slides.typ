@@ -23,6 +23,34 @@
   Lean Together 2024 -- Online
 ]
 
+// Start with "what is a type theory?"
+
+// "What is a semantics?"
+
+// "What would we want to prove, and why?"
+
+// What the data type representing it looks like
+
+// Explain de-Bruijn indices
+
+// The difference with math: Big Inductives (TM)
+
+// Because we're using Lean differently, we run into a different collection of bugs
+
+// "what is a refinement type?"
+
+// - addition is commutative
+
+// - the input is a multiple of the output
+
+// Erasure and such
+
+// "what do the data types look like?"
+
+// Semantic Regularity ==> consistency
+
+// Reaaaaally big induction bugs
+
 #focus-slide[
     = $ert$ in a nutshell
 ]
@@ -164,27 +192,6 @@
 
 #slide[
     = Doing Big Inductions
-    ...
-]
-
-#slide[
-    = Future: Verified Interpreter w/ `lean-sys`
-    ...
-]
-
-#focus-slide[
-    = Adding Nothing to HOL
-]
-
-#slide[
-    ...
-]
-
-#focus-slide[
-    = The Isotope Project
-]
-
-#slide[
     ...
 ]
 
