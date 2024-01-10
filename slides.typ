@@ -10,6 +10,8 @@
 #let llet = $sans("let")$;
 #let case = $sans("case")$;
 
+#show link: l => text(blue, l)
+
 #title-slide[
   = Explicit Refinement Types
   #v(2em)
@@ -24,8 +26,29 @@
   Lean Together 2024 -- Online
 ]
 
+#let newmark = text(red, "(new!)")
+
+#slide[
+    = The Plan
+    #line-by-line[
+        - Speedrun simply-typed lambda calculus tutorial for de-Bruijn indices
+            - See #link("https://leanprover.github.io/lean4/doc/examples/deBruijn.lean.html")[Dependent de Bruijn indices in the Lean Manual]
+        - Sketch syntactic weakening and substitution #newmark
+        - Sketch semantic weakening and substitution #newmark
+        - Sketch refinement types #newmark
+        - *Hopefully*: sketch _semantic regularity_ #newmark
+    ]
+    #uncover("6-")[
+        *Follow along at:* #link("https://github.com/explicit-refinement/ert-lean-together")
+    ]
+]
+
 #focus-slide[
     = What is a type theory?
+]
+
+#focus-slide[
+    = Simply-typed Lambda Calculus
 ]
 
 #let stlc-var(ctx, var, ty) = rule(name: "var", $ctx ⊢ var: ty$, $var: ty ∈ ctx$)
@@ -43,7 +66,6 @@
 #let stlc-abort(ctx) = rule(name: $⊥$, $Γ ⊢ ⊥: A$, $$)
 
 #slide[
-    = Simply-Typed Lambda Calculus
     #align(center + horizon, stack(dir: ttb, spacing: 2em,
         stack(dir: ltr, spacing: 2em,
             only("1-", proof-tree(stlc-var($Γ$, $x$, $A$))),
@@ -428,20 +450,22 @@
 
 #slide[
     = Syntax Substitution
-    ```lean
-    def Stlc.subst (σ: Nat -> Stlc) : Stlc -> Stlc
-    | var n => σ n
-    | app s t => app (subst σ s) (subst σ t)
-    | lam A t => lam A (subst (liftSubst σ) t)
-    | nil => nil
-    ```
-    #uncover("2-")[
+    #align(horizon)[
         ```lean
-
-        def liftSubst (σ: Nat -> Stlc) : Nat -> Stlc
-        | 0 => var 0
-        | n + 1 => (subst σ n).wk (stepWk id)
+        def Stlc.subst (σ: Nat -> Stlc) : Stlc -> Stlc
+        | var n => σ n
+        | app s t => app (subst σ s) (subst σ t)
+        | lam A t => lam A (subst (liftSubst σ) t)
+        | nil => nil
         ```
+        #uncover("2-")[
+            ```lean
+
+            def liftSubst (σ: Nat -> Stlc) : Nat -> Stlc
+            | 0 => var 0
+            | n + 1 => (subst σ n).wk (stepWk id)
+            ```
+        ]
     ]
 ]
 
