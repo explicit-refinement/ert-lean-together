@@ -340,14 +340,30 @@
 ]
 
 #slide[
-    = Syntactic Weakening Lemmas
-    - TODO: fun theorems
-]
+    = Weakening Syntax
+    #align(left + horizon)[
+        ```lean
+        def Stlc.wk (ρ: Nat -> Nat) : Stlc -> Stlc
+        | var n => var (ρ n)
+        | app s t => app (wk ρ s) (wk ρ t)
+        | lam A t => lam A (wk (liftWk ρ) t)
+        ```
+        #uncover("2-")[
+            ```lean
 
-#slide[
-    = Substituting de-Bruijn indices
-    - TODO: definition
-    - TODO: fun theorems
+            theorem Stlc.wk_id: wk id s = s
+            ```
+        ]
+        #uncover("3-")[
+            ```lean
+            theorem Stlc.wk_comp: (wk ρ (wk σ t)) = wk (ρ ∘ σ) t
+            
+            ```
+        ]
+        #uncover("4-")[
+            etc...
+        ]
+    ]
 ]
 
 #slide[
