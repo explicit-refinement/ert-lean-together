@@ -192,7 +192,7 @@
 
 #slide[
     = Weakening
-    #align(center + horizon)[
+    #align(left + horizon)[
         ```lean
         inductive Wk: Ctx -> Ctx
         | nil: Wk [] []
@@ -201,9 +201,20 @@
         ```
         #uncover("2-")[
             ```lean
-            theorem Stlc.wk: Wk Γ Δ -> HasType Δ A -> HasType Γ A
+
+            theorem Stlc.wk (ρ: Wk Γ Δ): HasType Δ A -> HasType Γ A
+            | var v => var (v.wk ρ)
+            | app s t => app (wk ρ s) (wk ρ t)
+            | lam A t => lam A (wk ρ.lift t)
             ```
         ]
+    ]
+]
+
+#slide[
+    = Substitution
+    #align(center + horizon)[
+        *Omitted for time*
     ]
 ]
 
@@ -347,6 +358,7 @@
         | var n => var (ρ n)
         | app s t => app (wk ρ s) (wk ρ t)
         | lam A t => lam A (wk (liftWk ρ) t)
+        | nil => nil
         ```
         #uncover("2-")[
             ```lean
@@ -367,13 +379,35 @@
 ]
 
 #slide[
-    = Coherence
-    ...
+    = Weakening Derivations
+    #align(horizon)[
+        ```lean
+        theorem Stlc.HasTy (R: Wk ρ Γ Δ): HasTy Δ s A 
+            -> HasTy Γ (wk ρ s) A
+        | var v => v.wk R
+        | app s t => app (wk R s) (wk R t)
+        | lam A t => lam A (wk R.lift t)
+        | nil => nil
+        ```
+    ]
 ]
 
 #slide[
-    = Weakening
-    ...
+    = Weakening: aside
+    #align(horizon)[
+    ```lean
+        inductive Wk
+        | id
+        | lift (ρ: Wk)
+        | step (ρ: Wk)
+
+        def Wk.var: Wk -> Nat -> Nat
+        | id, n => n
+        | lift ρ, 0 => 0
+        | lift ρ, n + 1 => (ρ.var n) + 1
+        | step ρ, n => (ρ.var n) + 1
+        ```
+    ]
 ]
 
 #slide[
