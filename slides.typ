@@ -74,7 +74,24 @@
 
 #slide[
     = Substitution
-    ...
+    #align(center + horizon)[
+        $
+        f: A -> B, x: A ⊢ f med x: B
+        $
+        $
+        #only("1", $y: B,$) 
+        #only("2", text(red, $f: A -> B, x: A,$))
+        g: B -> C ⊢ g
+        #only("1", $y$)
+        #only("2", text(red, $(f med x)$)): C
+        $
+    ]
+]
+
+#slide[
+    = Substitution
+    - TODO: rules
+    - TODO: statement
 ]
 
 #focus-slide[
@@ -83,22 +100,39 @@
 
 #slide[
     = Set semantics
-    ...
+
+    - TODO: context semantics
+    - TODO: type semantics
+    - TODO: judgement semantics
 ]
 
 #slide[
-    = The Option monad
-    ...
+    = Data types
+
+    - TODO: products
+    - TODO: coproducts
+    - TODO: natural numbers
+]
+
+#slide[
+    = Effects
+
+    - TODO: `abort` rule
+    - TODO: `Option` monad
 ]
 
 #slide[
     = Semantic Weakening
-    ...
+
+    - TODO: semantics of a weakening
+    - TODO: statement
 ]
 
 #slide[
     = Semantic Substitution
-    ...
+
+    - TODO: semantics of a substitution
+    - TODO: statement
 ]
 
 #focus-slide[
@@ -121,7 +155,35 @@
 ]
 
 #slide[
+    = Weakening Syntax
+    - TODO: inductive style
+    - TODO: functional style
+    - TODO: definition
+    - TODO: fun theorems
+]
+
+#slide[
+    = Substituting Syntax
+    - TODO: definition
+    - TODO: fun theorems
+]
+
+#slide[
+    = Typing Judgements
+]
+
+#slide[
     = Coherence
+    ...
+]
+
+#slide[
+    = Weakening
+    ...
+]
+
+#slide[
+    = Substitution
     ...
 ]
 
