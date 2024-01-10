@@ -190,6 +190,23 @@
     ]
 ]
 
+#slide[
+    = Weakening
+    #align(center + horizon)[
+        ```lean
+        inductive Wk: Ctx -> Ctx
+        | nil: Wk [] []
+        | lift: Wk Γ Δ -> Wk (A::Γ) (A::Δ)
+        | step: Wk Γ Δ -> Wk Γ (A::Δ)  
+        ```
+        #uncover("2-")[
+            ```lean
+            theorem Stlc.wk: Wk Γ Δ -> HasType Δ A -> HasType Γ A
+            ```
+        ]
+    ]
+]
+
 #focus-slide[
     = Extrinsic Typing
 ]
@@ -288,8 +305,38 @@
 ]
 
 #slide[
-    = Weakening de-Bruijn indices
-    ...
+    = Weakening: Intrinsic
+    #align(center + horizon)[
+        ```lean
+        inductive Wk: Ctx -> Ctx
+        | nil: Wk [] []
+        | lift: Wk Γ Δ -> Wk (A::Γ) (A::Δ)
+        | step: Wk Γ Δ -> Wk Γ (A::Δ)  
+        ```
+        #uncover("2-")[
+            *Question*: how to weaken _terms_?
+        ]
+    ]
+]
+
+#slide[
+    = Weakening: Extrinsic
+    #align(left + horizon)[
+        ```lean
+        inductive Wk: (Nat -> Nat) -> Ctx -> Ctx
+        | nil: Wk ρ [] []
+        | lift: Wk ρ Γ Δ -> Wk (liftWk ρ) (A::Γ) (A::Δ)
+        | step: Wk ρ Γ Δ -> Wk (stepWk ρ) Γ (A::Δ)  
+        ```
+        ```lean
+        def liftWk (ρ: Nat -> Nat): Nat -> Nat
+        | 0 => 0
+        | n + 1 => (ρ n) + 1
+        ```
+        ```lean
+        def stepWk (ρ: Nat -> Nat) (n: Nat): Nat := (ρ n) + 1
+        ```
+    ]
 ]
 
 #slide[
