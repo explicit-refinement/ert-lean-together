@@ -51,6 +51,7 @@
         ),
         stack(dir: ltr, spacing: 2em,
             only("4-", proof-tree(stlc-lam($Γ ⊢ λ x: A. t: A -> B$, $Γ, x: A ⊢ t: B$))),
+            only("5-", proof-tree(stlc-unit($Γ$))),
         ),
         only("2-", $Γ = x: A, y: B, z: C, ...", etc."$)
     ))
@@ -65,7 +66,7 @@
 
 #slide[
     #align(center + horizon)[
-        *Theorem* (Weakening):
+        *Lemma* (Weakening):
         #uncover("2-")[*If* $Δ ⊆ Γ$]
         #uncover("3-")[and $Δ ⊢ a: A$,]
         #uncover("4-")[*then* $Γ ⊢ a: A$]
@@ -88,51 +89,32 @@
     ]
 ]
 
+#let stlc-subst-nil(ctx) = rule(name: "subst-nil", $dot: ctx -> dot$, $$)
+
+#let stlc-subst-cons(c, σ, t) = rule(name: "subst-cons", c, σ, t)
+
 #slide[
     = Substitution
-    - TODO: rules
-    - TODO: statement
-]
 
-#focus-slide[
-    = What is a (denotational) semantics?
-]
-
-#slide[
-    = Set semantics
-
-    - TODO: context semantics
-    - TODO: type semantics
-    - TODO: judgement semantics
-]
-
-#slide[
-    = Data types
-
-    - TODO: products
-    - TODO: coproducts
-    - TODO: natural numbers
-]
-
-#slide[
-    = Effects
-
-    - TODO: `abort` rule
-    - TODO: `Option` monad
-]
-
-#slide[
-    = Semantic Weakening
-
-    - TODO: semantics of a weakening
-    - TODO: statement
-]
-
-#slide[
-    = Semantic Substitution
-
-    - TODO: semantics of a substitution
-    - TODO: statement
+    #align(center + horizon)[
+        #stack(dir: ttb, spacing: 2em,
+            align(left)[
+                #uncover("2-")[*Lemma* (Substitution):]
+                #uncover("3-")[*If* $σ: Γ -> Δ$, ]
+                #uncover("4-")[$Δ ⊢ a: A$]
+                #uncover("5-")[*then* $Γ ⊢ [σ]a: A$]
+            ],
+            stack(
+                dir: ltr,
+                spacing: 2em,
+                proof-tree(stlc-subst-nil($Γ$)),
+                proof-tree(stlc-subst-cons(
+                    $[x ↦ t]σ: Γ -> Δ, x: A$, 
+                    $σ: Γ -> Δ$, 
+                    $Γ ⊢ t: A$))
+            ),
+        )
+    ]
 ]
 
 #focus-slide[
@@ -140,8 +122,64 @@
 ]
 
 #slide[
+    = Types
+    #align(center + horizon,  grid(
+        columns: 3,
+        gutter: 3em,
+        align(left, $A, B ::= bold(1) | A -> B$),
+        uncover("2-", $ ⇝ $),
+        uncover("2-", align(left, ```lean
+        inductive Ty: Type
+        | unit
+        | fn (A B: Ty): Ty
+        ```)),
+        uncover("3-", align(left, $Γ, Δ ::= dot | Γ, x: A$)),
+        uncover("3-", $ ⇝ $),
+        uncover("3-", align(left, ```lean
+        def Ctx := List Ty
+        ```)),
+    ))
+]
+
+#slide[
     = Intrinsic Style
-    ...
+    #align(left + horizon)[
+        ```lean
+        inductive Stlc: Ctx -> Ty -> Type
+        ```
+        #uncover("5-")[
+        ```lean
+        | var: Var Γ A -> Stlc Γ A
+        ```
+        ]
+        #uncover("2-")[
+        ```lean
+        | lam: Stlc (A :: Γ) B -> Stlc Γ (fn A B)
+        ```
+        ]
+        #uncover("3-")[
+        ```lean
+        | app: Stlc Γ (fn A B) -> Stlc Γ A -> Stlc Γ B
+        ```
+        ]
+        #uncover("4-")[
+        ```lean
+        | unit: Stlc Γ unit
+        ```
+        ]
+        #uncover("7-")[
+        ```lean
+        -- NOTE: *not* a `Prop`!
+        ```
+        ]
+        #uncover("6-")[
+        ```lean
+        inductive Var: Ctx -> Ty -> Type
+        | head: Var (A :: Γ) A
+        | tail: Var Γ A -> Var (B :: Γ) A
+        ```
+        ]
+    ]
 ]
 
 #slide[
@@ -185,6 +223,47 @@
 #slide[
     = Substitution
     ...
+]
+
+#focus-slide[
+    = What is a (denotational) semantics?
+]
+
+#slide[
+    = Set semantics
+
+    - TODO: context semantics
+    - TODO: type semantics
+    - TODO: judgement semantics
+]
+
+#slide[
+    = Data types
+
+    - TODO: products
+    - TODO: coproducts
+    - TODO: natural numbers
+]
+
+#slide[
+    = Effects
+
+    - TODO: `abort` rule
+    - TODO: `Option` monad
+]
+
+#slide[
+    = Semantic Weakening
+
+    - TODO: semantics of a weakening
+    - TODO: statement
+]
+
+#slide[
+    = Semantic Substitution
+
+    - TODO: semantics of a substitution
+    - TODO: statement
 ]
 
 #focus-slide[
