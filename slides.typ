@@ -23,175 +23,124 @@
   Lean Together 2024 -- Online
 ]
 
-// Start with "what is a type theory?"
+#focus-slide[
+    = What is a type theory?
+]
 
-// "What is a semantics?"
+#slide[
+    = Simply-Typed Lambda Calculus
+    ...
+]
 
-// "What would we want to prove, and why?"
+#slide[
+    = Weakening
+    ...
+]
 
-// What the data type representing it looks like
-
-// Explain de-Bruijn indices
-
-// The difference with math: Big Inductives (TM)
-
-// Because we're using Lean differently, we run into a different collection of bugs
-
-// "what is a refinement type?"
-
-// - addition is commutative
-
-// - the input is a multiple of the output
-
-// Erasure and such
-
-// "what do the data types look like?"
-
-// Semantic Regularity ==> consistency
-
-// Reaaaaally big induction bugs
+#slide[
+    = Substitution
+    ...
+]
 
 #focus-slide[
-    = $ert$ in a nutshell
+    = What is a (denotational) semantics?
 ]
 
 #slide[
-    = Defining $stlc$
-
-    #v(2em)
-
-    #grid(
-        columns: 4,
-        gutter: 0.5em,
-        $s, t ::=$, $x $, $| λ x: A. t$, $| s app t$,
-        $$, $$, $| (s, t)$, $|  llet (x, y) = s; t$,
-        $$, $$, $| ι_i med t$, 
-                $| case t med (ι_0 x => l) med (ι_1 y => r)$,
-        $$, $$, $| 0$, $| sans("succ") med t$,
-        $$, $$, $$, $| sans("natrec") med n med z med (sans("succ") med x, y => s)$,
-    )
-
-    #v(1em)
-
-    #grid(
-        columns: 4,
-        gutter: 0.5em,
-        $A, B ::=$, $A -> B$, $| A × B$, $| A + B$,
-        $$, $$, $| ℕ$,
-    )
-]
-
-#slide[
-    #align(center,
-        grid(
-            columns: 2,
-            gutter: 8em,
-            [= Intrinsic], [= de Bruijn],
-            [...], [...]
-        )
-    )
-]
-
-#slide[
-    = Weakening and Substitution of de-Bruijn Indices
     ...
 ]
 
 #slide[
-    = Lesson 1: Use Mathlib
+    = Semantic Weakening
     ...
 ]
 
 #slide[
-    = Lesson 2: Functional Style
+    = Semantic Substitution
+    ...
+]
+
+#focus-slide[
+    = How would we represent this in Lean?
+]
+
+#slide[
+    = Intrinsic Style
     ...
 ]
 
 #slide[
-    = Semantics
-
-    ... (so far following Lean 4 tutorial)
-]
-
-#slide[
-    = Lesson 3: `Prop` and coherence
-    
+    = Extrinsic Style
     ...
 ]
 
 #slide[
-    = Refinement Types   
-
-    #v(2em)
-
-    #grid(
-        columns: 4,
-        gutter: 0.5em,
-        $A, B ::=$, $(x: A) -> B$, $| (x: A) × B$, $| A + B$,
-        $$, $$, $| ℕ$, $$,
-        $$, $$, $| {x: A | φ}$, $| (p: φ) => A$,
-        $$, $$, $| ∀x: A, B$, $| ∃x: A, B$
-    )
-
-    #v(1em)
-
-    #grid(
-        columns: 4,
-        gutter: 0.5em,
-        $φ, ψ ::=$, $a = b: A$, $| ⊤$, $| ⊥$,
-        $$, $$, $| (p: φ) => ψ$, $| (p: φ) ∧ ψ$,
-        $$, $$, $| ∀x: A, φ$, $| ∃x: A, φ$
-    )
-]
-
-#slide[
-    = De Bruijn Indices
+    = de-Bruijn Indices
     ...
 ]
 
 #slide[
-    = Typing Rules
+    = Coherence
+    ...
+]
+
+#focus-slide[
+    = What is a refinement type?
+]
+
+#slide[
     ...
 ]
 
 #slide[
-    = Theorem: Weakening
+    = Weakening
     ...
 ]
 
 #slide[
-    = `apply_assumption`?
-
+    = Substitution
     ...
 ]
 
-#slide[
-    = Theorem: Substitution
-    ...
+#focus-slide[
+    = Semantics of refinement types
 ]
 
 #slide[
     = Erasure
-    ...    
-]
-
-#slide[
-    = Theorem: Semantic Substitution
     ...
 ]
 
 #slide[
-    = `dsimp` and the OOM killer
+    = Semantic Regularity
     ...
 ]
 
+#focus-slide[
+    = Representing Refinement Types in Lean
+]
+
 #slide[
-    = Theorem: Semantic Regularity
+    = Coherence
     ...
 ]
 
 #slide[
     = Doing Big Inductions
+    ...
+]
+
+#focus-slide[
+    = Experience Report
+]
+
+#slide[
+    = _Explicit Refinement Types_
+    ...
+]
+
+#slide[
+    = _Adding Nothing to HOL_
     ...
 ]
 
