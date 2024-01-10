@@ -131,7 +131,7 @@
         uncover("2-", align(left, ```lean
         inductive Ty: Type
         | unit
-        | fn (A B: Ty): Ty
+        | fn (A B: Ty)
         ```)),
         uncover("3-", align(left, $Γ, Δ ::= dot | Γ, x: A$)),
         uncover("3-", $ ⇝ $),
@@ -141,8 +141,15 @@
     ))
 ]
 
+#focus-slide[
+    = Intrinsic vs. Extrinsic Typing
+]
+
+#focus-slide[
+    = Intrinsic Typing
+]
+
 #slide[
-    = Intrinsic Style
     #align(left + horizon)[
         ```lean
         inductive Stlc: Ctx -> Ty -> Type
@@ -169,6 +176,7 @@
         ]
         #uncover("7-")[
         ```lean
+
         -- NOTE: *not* a `Prop`!
         ```
         ]
@@ -182,32 +190,79 @@
     ]
 ]
 
-#slide[
-    = Extrinsic Style
-    ...
+#focus-slide[
+    = Extrinsic Typing
 ]
+
+#slide[
+    = Untyped Syntax
+    #align(center + horizon,  grid(
+        columns: 3,
+        gutter: 2em,
+        align(left, $s, t ::= x | s med t | λ x: A. t | ()$),
+        uncover("2-", $ ⇝ $),
+        align(left,[ 
+        #only("-2", uncover("2-", ```lean
+        inductive Stlc: Type
+        | var -- ???
+        | app (s t: Stlc)
+        | lam (A: Ty) (t: Stlc)
+        | app (s t: Stlc)
+        | nil
+        ```))
+        #only("3-", ```lean
+        inductive Stlc: Type
+        | var (n: ℕ)
+        | app (s t: Stlc)
+        | lam (A: Ty) (t: Stlc)
+        | app (s t: Stlc)
+        | nil
+        ```)
+        ]),
+    )) 
+]
+
+#let mkred(x) = text(red, x)
+#let mkblue(x) = text(blue, x)
+#let mkgreen(x) = text(olive.darken(20%), x)
 
 #slide[
     = de-Bruijn Indices
+    #align(center + horizon, grid(columns: 3, gutter: 2em,
+        $mkred(λ x). mkblue(λ y). bold(mkgreen(λ z)). bold(mkgreen(z))$,
+        $==>$,
+        $mkred(λ) mkblue(λ) bold(mkgreen(λ)) bold(mkgreen(0))$,
+        $mkred(λ x). bold(mkblue(λ y)). mkgreen(λ z). mkblue(y)$,
+        $==>$,
+        $mkred(λ) bold(mkblue(λ)) mkgreen(λ) bold(mkblue(1))$,
+        $bold(mkred(λ x)). mkblue(λ y). mkgreen(λ z). bold(mkred(x))$,
+        $==>$,
+        $bold(mkred(λ)) mkblue(λ) mkgreen(λ) bold(mkred(2))$,
+        $bold(#[$w: A$]) ⊢  mkred(λ x). mkblue(λ y). mkgreen(λ z). bold(w)$,
+        $==>$,
+        $bold(A) ⊢ mkred(λ) mkblue(λ) mkgreen(λ) bold(3)$
+    ))
+]
+
+#slide[
+    = Weakening de-Bruijn indices
     ...
 ]
 
 #slide[
-    = Weakening Syntax
-    - TODO: inductive style
-    - TODO: functional style
-    - TODO: definition
+    = Syntactic Weakening Lemmas
     - TODO: fun theorems
 ]
 
 #slide[
-    = Substituting Syntax
+    = Substituting de-Bruijn indices
     - TODO: definition
     - TODO: fun theorems
 ]
 
 #slide[
     = Typing Judgements
+    ...
 ]
 
 #slide[
