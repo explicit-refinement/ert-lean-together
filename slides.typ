@@ -305,7 +305,7 @@
         inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Prop
         inductive Stlc.HasVar : Ctx -> Nat -> Ty -> Prop
         ```
-        - Pros: coherence comes for free, computationally efficient
+        - Pros: coherence comes for free, can use tactics
         - Cons: annoying to define things by induction on well-typed terms
     - *Option 2:* _Adding Nothing to HOL_
         ```lean
@@ -339,14 +339,30 @@
         | lift: Wk ρ Γ Δ -> Wk (liftWk ρ) (A::Γ) (A::Δ)
         | step: Wk ρ Γ Δ -> Wk (stepWk ρ) Γ (A::Δ)  
         ```
-        ```lean
-        def liftWk (ρ: Nat -> Nat): Nat -> Nat
-        | 0 => 0
-        | n + 1 => (ρ n) + 1
-        ```
-        ```lean
-        def stepWk (ρ: Nat -> Nat) (n: Nat): Nat := (ρ n) + 1
-        ```
+        #only("-3")[
+            #uncover("2-")[
+                ```lean
+
+                def liftWk (ρ: Nat -> Nat): Nat -> Nat
+                | 0 => 0
+                | n + 1 => (ρ n) + 1
+                ```
+            ]
+            #uncover("3-")[
+                ```lean
+                def stepWk (ρ: Nat -> Nat) (n: Nat): Nat := (ρ n) + 1
+                ```
+            ]
+        ]
+        #only("4-")[
+            ```lean
+
+            def Var.wk: Wk ρ Γ Δ -> Var Γ A -> Var Δ A
+            | lift R, head => head
+            | lift R, tail v
+            | step R, v => tail (v.wk R)
+            ```
+        ]
     ]
 ]
 
@@ -382,7 +398,7 @@
     = Weakening Derivations
     #align(horizon)[
         ```lean
-        theorem Stlc.HasTy (R: Wk ρ Γ Δ): HasTy Δ s A 
+        theorem Stlc.HasTy.wk (R: Wk ρ Γ Δ): HasTy Δ s A 
             -> HasTy Γ (wk ρ s) A
         | var v => v.wk R
         | app s t => app (wk R s) (wk R t)
@@ -411,8 +427,36 @@
 ]
 
 #slide[
+    = Syntax Substitution
+    ```lean
+    def Stlc.subst (σ: Nat -> Stlc) : Stlc -> Stlc
+    | var n => σ n
+    | app s t => app (subst σ s) (subst σ t)
+    | lam A t => lam A (subst (liftSubst σ) t)
+    | nil => nil
+    ```
+    #uncover("2-")[
+        ```lean
+
+        def liftSubst (σ: Nat -> Stlc) : Nat -> Stlc
+        | 0 => var 0
+        | n + 1 => (subst σ n).wk (stepWk id)
+        ```
+    ]
+]
+
+#slide[
     = Substitution
-    ...
+    #align(horizon)[
+        ```lean
+        theorem Stlc.HasTy.wk (R: Wk ρ Γ Δ): HasTy Δ s A 
+            -> HasTy Γ (wk ρ s) A
+        | var v => v.wk R
+        | app s t => app (wk R s) (wk R t)
+        | lam A t => lam A (wk R.lift t)
+        | nil => nil
+        ```
+    ]
 ]
 
 #focus-slide[
