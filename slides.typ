@@ -245,6 +245,49 @@
 ]
 
 #slide[
+    = Typing Judgements
+    ```lean
+    inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
+    ```
+    ```lean
+    | var : HasVar Γ n A -> HasTy Γ (var n) A
+    ```
+    ```lean
+    | app : HasTy Γ s (fn A B) 
+        -> HasTy Γ t A 
+        -> HasTy Γ (app s t) B
+    ```
+    ```lean
+    | lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
+    ```
+    ```lean
+    | unit : HasTy Γ nil unit
+    ```
+    ```lean
+    inductive Stlc.HasVar : Ctx -> Nat -> Ty -> Type
+    | head : HasVar 0 (A :: Γ)
+    | tail : HasVar n Γ -> HasVar (n + 1) (A :: Γ)
+    ```
+]
+
+#slide[
+    = Coherence
+    - *Option 1:* _Explicit Refinement Types_
+        ```lean
+        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Prop
+        inductive Stlc.HasVar : Ctx -> Nat -> Ty -> Prop
+        ```
+        - Pros: coherence comes for free, computationally efficient
+        - Cons: annoying to define things by induction on well-typed terms
+    - *Option 2:* _Adding Nothing to HOL_
+        ```lean
+        theorem Stlc.HasTy.coherence (H H': HasTy Γ s A) : H = H'
+        ```
+        - Pros: very easy to define things by induction on well-typed terms
+        - Cons: doesn't erase quite the same as `Prop`...
+]
+
+#slide[
     = Weakening de-Bruijn indices
     ...
 ]
@@ -258,11 +301,6 @@
     = Substituting de-Bruijn indices
     - TODO: definition
     - TODO: fun theorems
-]
-
-#slide[
-    = Typing Judgements
-    ...
 ]
 
 #slide[
