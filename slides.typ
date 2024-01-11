@@ -10,8 +10,6 @@
 #let llet = $sans("let")$;
 #let case = $sans("case")$;
 
-#show link: l => text(blue, l)
-
 #title-slide[
   = Explicit Refinement Types
   #v(2em)
@@ -1116,5 +1114,3 @@
 
   #link("mailto:jeg74@cam.ac.uk")[`jeg74@cam.ac.uk`]
 ]
-
-#bibliography("references.bib")
