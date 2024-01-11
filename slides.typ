@@ -121,23 +121,21 @@
 #slide[
     = Substitution
 
-    #align(center + horizon)[
+    #align(horizon)[
         #stack(dir: ttb, spacing: 2em,
-            align(left)[
-                #uncover("2-")[*Lemma* (Substitution):]
-                #uncover("3-")[*If* $σ: Γ -> Δ$, ]
-                #uncover("4-")[$Δ ⊢ a: A$]
-                #uncover("5-")[*then* $Γ ⊢ [σ]a: A$]
+            [
+                Given $σ: sans("Var") -> sans("Stlc")$,
+                #uncover("2-")[$∀x, x: A ∈ Δ ==> Γ ⊢ σ(x): A$]
             ],
-            stack(
-                dir: ltr,
-                spacing: 2em,
-                proof-tree(stlc-subst-nil($Γ$)),
-                proof-tree(stlc-subst-cons(
-                    $[x ↦ t]σ: Γ -> Δ, x: A$, 
-                    $σ: Γ -> Δ$, 
-                    $Γ ⊢ t: A$))
-            ),
+            [
+                #uncover("3-")[*Lemma* (Substitution):]
+                #uncover("4-")[*If* $σ: Γ -> Δ$, ]
+                #uncover("5-")[$Δ ⊢ a: A$]
+                #uncover("6-")[*then* $Γ ⊢ [σ]a: A$]
+            ],
+            [
+                #uncover("7-")[Here $[σ]$ denotes *capture-avoiding* substitution.]
+            ]
         )
     ]
 ]
@@ -159,11 +157,6 @@
         | nat
         | fn (A B: Ty)
         ```)),
-        uncover("3-", align(left, $Γ, Δ ::= dot | Γ, x: A$)),
-        uncover("3-", $ ⇝ $),
-        uncover("3-", align(left, ```lean
-        def Ctx := List Ty
-        ```)),
     ))
 ]
 
@@ -175,7 +168,7 @@
         align(left, $s, t ::= x | s med t | λ x: A. t | () | n | attach(⊥, br: A)$),
         uncover("2-", $ ⇝ $),
         align(left,[ 
-        #only("-2", uncover("2-", ```lean
+        #only("-3", uncover("2-", ```lean
         inductive Stlc: Type
         | var -- ???
         | app (s t: Stlc)
@@ -184,7 +177,7 @@
         | cnst (n: Nat)
         | abort (A: Ty)
         ```))
-        #only("3-", ```lean
+        #only("6-", ```lean
         inductive Stlc: Type
         | var (n: Nat)
         | app (s t: Stlc)
@@ -194,7 +187,18 @@
         | abort (A: Ty)
         ```)
         ]),
-    )) 
+        // only("7-", align(left, $Γ, Δ ::= dot | Γ, x: A$)),
+        // only("8-", $ ⇝ $),
+        // only("8-", align(left, ```lean
+        // def Ctx := List Ty
+        // ```)),
+    ))
+    #only("3-")[
+        Issues:
+        #only("4-")[- Want $λ x: A. x = λ y: A. y$ ($α$-conversion)]
+        #only("5-")[- Need to impelement capture-avoiding substitution]
+        #only("6")[*Solution: de Bruijn indices*]
+    ]
 ]
 
 #let mkred(x) = text(red, x)
@@ -220,7 +224,91 @@
 ]
 
 #slide[
+    = Typing Contexts
+    #align(center + horizon,  grid(
+        columns: 3,
+        gutter: 2em,
+        align(left, $s, t ::= x | s med t | λ x: A. t | () | n | attach(⊥, br: A)$),
+        $ ⇝ $,
+        align(left,[ 
+            ```lean
+            inductive Stlc: Type
+            | var (n: Nat)
+            | app (s t: Stlc)
+            | lam (A: Ty) (t: Stlc)
+            | nil
+            | cnst (n: Nat)
+            | abort (A: Ty)
+            ```
+        ]),
+        only("2-", align(left, $Γ, Δ ::= dot | Γ, x: A$)),
+        only("3-", $ ⇝ $),
+        only("3-", align(left, ```lean
+        def Ctx := List Ty
+        ```)),
+    ))
+]
+
+#slide[
     = Typing Judgements
+    #align(horizon)[
+        ```lean
+        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
+        ```
+    ]
+]
+
+#slide[
+    = Variables
+    #align(horizon, stack(dir: ttb, spacing: 2em, 
+        ```lean
+        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
+        | var : Var Γ n A -> HasTy Γ (var n) A
+        ```,
+        align(center, proof-tree(stlc-var($Γ$, $x$, $A$))),
+        only("2-")[
+            ```lean
+            inductive Var : Ctx -> Nat -> Ty -> Type
+            | head : Var (A :: Γ) 0 A
+            | tail : Var Γ n A -> Var (B :: Γ) (n + 1) A
+            ```
+        ]
+    ))
+]
+
+#slide[
+    = Applications
+    #align(horizon, stack(dir: ttb, spacing: 2em, 
+        ```lean
+        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
+        | var : Var Γ n A -> HasTy Γ (var n) A
+        | app : HasTy Γ s (fn A B) 
+          -> HasTy Γ t A 
+          -> HasTy Γ (app s t) B
+        ```,
+        align(center, proof-tree(
+            stlc-app($Γ ⊢ s med t: B$, $Γ ⊢ s: A -> B$, $Γ ⊢ t: A$))),
+    ))
+]
+
+#slide[
+    = $λ$-Abstraction
+    #align(horizon, stack(dir: ttb, spacing: 2em, 
+        ```lean
+        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
+        | var : Var Γ n A -> HasTy Γ (var n) A
+        | app : HasTy Γ s (fn A B) 
+          -> HasTy Γ t A 
+          -> HasTy Γ (app s t) B
+        | lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
+        ```,
+        align(center, proof-tree(
+            stlc-lam($Γ ⊢ λ x: A. t: A -> B$, $Γ, x: A ⊢ t: B$))),
+    ))
+]
+
+#slide[
+    = Constants and Effects
     #align(horizon)[
         ```lean
         inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
@@ -236,36 +324,8 @@
     ]
 ]
 
-#slide[
-    #align(horizon)[
-        ```lean
-        inductive Var : Ctx -> Nat -> Ty -> Type
-        | head : Var (A :: Γ) 0 A
-        | tail : Var Γ n A -> Var (B :: Γ) (n + 1) A
-        ```
-    ]
-]
-
-#slide[
-    = Coherence
-    #uncover("2-")[
-    - *Option 1:* _Adding Nothing to HOL_
-        ```lean
-        theorem HasTy.ty_coh: HasTy Γ s A -> HasTy Γ s B -> A = B
-        theorem HasTy.coh (H H': HasTy Γ s A) : H = H'
-        ```
-        - Pros: very easy to define things by induction on well-typed terms
-        - Cons: doesn't erase quite the same as `Prop`...
-    ]
-    #uncover("3-")[
-    - *Option 2:* _Explicit Refinement Types_
-        ```lean
-        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Prop
-        inductive Stlc.Var : Ctx -> Nat -> Ty -> Prop
-        ```
-        - Pros: coherence comes for free, can use tactics
-        - Cons: annoying to define things by induction on well-typed terms
-    ]
+#focus-slide[
+    = Formalizing properties of the STLC
 ]
 
 #slide[
@@ -273,35 +333,51 @@
     #align(left + horizon)[
         ```lean
         inductive Wk: (Nat -> Nat) -> Ctx -> Ctx -> Type
-        | nil: Wk ρ [] []
-        | lift: Wk ρ Γ Δ -> Wk (liftWk ρ) (A::Γ) (A::Δ)
-        | step: Wk ρ Γ Δ -> Wk (stepWk ρ) (A::Γ) Δ  
         ```
-        #only("-3")[
-            #uncover("2-")[
-                ```lean
-
-                def liftWk (ρ: Nat -> Nat): Nat -> Nat
-                | 0 => 0
-                | n + 1 => (ρ n) + 1
-                ```
-            ]
-            #uncover("3-")[
-                ```lean
-                def stepWk (ρ: Nat -> Nat) (n: Nat): Nat := (ρ n) + 1
-                ```
-            ]
+        #uncover("2-")[
+            ```lean
+            | nil: Wk ρ [] []
+            ```
         ]
-        #only("4-")[
+        #uncover("3-")[
+            ```lean
+            | lift: Wk ρ Γ Δ -> Wk (liftWk ρ) (A::Γ) (A::Δ)
+            ```
+        ]
+        #uncover("4-")[
+            ```lean
+            | step: Wk ρ Γ Δ -> Wk (stepWk ρ) (A::Γ) Δ  
+            ```
+        ]
+        #uncover("3-")[
             ```lean
 
-            def Var.wk: Wk ρ Γ Δ -> Var Δ A -> Var Γ A
-            | lift R, head => head
-            | lift R, tail v
-            | step R, v => tail (v.wk R)
+            def liftWk (ρ: Nat -> Nat): Nat -> Nat
+            | 0 => 0
+            | n + 1 => (ρ n) + 1
+            ```
+        ]
+        #uncover("4-")[
+            ```lean
+            def stepWk (ρ: Nat -> Nat) (n: Nat): Nat := (ρ n) + 1
             ```
         ]
     ]
+]
+
+#slide[
+    = Weakening Variables
+    ```lean
+    inductive Wk: (Nat -> Nat) -> Ctx -> Ctx -> Type
+    | nil: Wk ρ [] []
+    | lift: Wk ρ Γ Δ -> Wk (liftWk ρ) (A::Γ) (A::Δ)
+    | step: Wk ρ Γ Δ -> Wk (stepWk ρ) (A::Γ) Δ  
+
+    def Var.wk: Wk ρ Γ Δ -> Var Δ A -> Var Γ A
+    | lift R, head => head
+    | lift R, tail v
+    | step R, v => tail (v.wk R)
+    ```
 ]
 
 #slide[
@@ -371,14 +447,27 @@
 #slide[
     = Syntax Substitution
     #align(horizon)[
-        ```lean
-        def Stlc.subst (σ: Nat -> Stlc) : Stlc -> Stlc
-        | var n => σ n
-        | app s t => app (subst σ s) (subst σ t)
-        | lam A t => lam A (subst (liftSubst σ) t)
-        | t => t
-        ```
-        #uncover("2-")[
+        #align(center)[
+            #only("1")[
+                $σ: sans("Var") -> sans("Stlc")$
+            ]
+            #only("2-")[
+                ```lean
+                σ: Nat -> Stlc
+                ```
+            ]
+        ]
+
+        #uncover("3-")[
+            ```lean
+            def Stlc.subst (σ: Nat -> Stlc) : Stlc -> Stlc
+            | var n => σ n
+            | app s t => app (subst σ s) (subst σ t)
+            | lam A t => lam A (subst (liftSubst σ) t)
+            | t => t
+            ```
+        ]
+        #uncover("4-")[
             ```lean
 
             def liftSubst (σ: Nat -> Stlc) : Nat -> Stlc
@@ -392,40 +481,77 @@
 #slide[
     = Substitution
     #align(horizon)[
-        ```lean
-        def Subst (σ: Nat -> Stlc) (Γ Δ: Ctx): Type := 
-          ∀{n A}, Var Δ n A -> HasTy Γ (σ n) A
-        ```
-        #uncover("2-")[
+        #only("1", align(center)[
+            $∀x, x: A ∈ Δ ==> Γ ⊢ σ(x): A$
+        ])
+        #only("2-")[
             ```lean
-
-            def Subst.lift (S: Subst σ Γ Δ): Subst (liftSubst σ) (A::Γ) (A::Δ)
-            | _, _, head => var head
-            | _, _, tail v => (S v).wk (Wk.step Wk.id)
+            def Subst (σ: Nat -> Stlc) (Γ Δ: Ctx): Type := 
+              ∀{n A}, Var Δ n A -> HasTy Γ (σ n) A
             ```
+        ]
+        #uncover("3-")[
+            ```lean
+            def HasTy.subst (S: Subst σ Γ Δ): HasTy Δ s A
+              -> HasTy Γ (s.subst σ) A
+            ```
+        ]
+        #uncover("4-")[
+            ```lean
+            | var v => S v
+            ```
+        ]
+        #uncover("5-")[
+            ```lean
+            | app s t => app (subst S s) (subst S t)
+            ```
+        ]
+        #uncover("5-")[
+            ```lean
+            | lam t => lam (subst S.lift t)
+            ```
+            #only("6-7")[
+                ```lean
+                lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
+                ```
+            ]
+            #only("7")[
+                ```lean
+                Subst S Γ Δ -> Subst S.lift (A :: Γ) (A :: Δ)
+                ```
+            ]
         ]
     ]
 ]
 
 #slide[
-    = Substitution
+    = Substitution Lifting
     #align(horizon)[
         ```lean
         def Subst.lift (S: Subst σ Γ Δ): Subst (liftSubst σ) (A::Γ) (A::Δ)
         | _, _, head => var head
         | _, _, tail v => (S v).wk (Wk.step Wk.id)
 
-        theorem liftWk_id: liftWk id = id 
-            := by funext v; cases v <;> rfl
-        def Wk.id: {Γ: Ctx} -> Wk id Γ Γ
-        | [] => nil
-        | _::_ => liftWk_id ▸ lift Wk.id
         ```
+        #uncover("2-")[
+            ```lean
+
+            def Wk.id: {Γ: Ctx} -> Wk id Γ Γ
+            | [] => nil
+            | _::_ => liftWk_id ▸ lift Wk.id
+            ```
+        ]
+        #uncover("3-")[
+            ```lean
+            theorem liftWk_id: liftWk id = id 
+                := by funext v; cases v <;> rfl
+            ```
+        ]
     ]
 ]
 
 #slide[
-    = Substitution
+    = Substitution (cont.)
     #align(horizon)[
         ```lean
         def HasTy.subst (S: Subst σ Γ Δ): HasTy Δ s A
@@ -1026,6 +1152,28 @@
   ---
 
   #link("mailto:jeg74@cam.ac.uk")[`jeg74@cam.ac.uk`]
+]
+
+#slide[
+    = Aside: Coherence
+    #uncover("2-")[
+    - *Option 1:* _Adding Nothing to HOL_
+        ```lean
+        theorem HasTy.ty_coh: HasTy Γ s A -> HasTy Γ s B -> A = B
+        theorem HasTy.coh (H H': HasTy Γ s A) : H = H'
+        ```
+        - Pros: very easy to define things by induction on well-typed terms
+        - Cons: doesn't erase quite the same as `Prop`...
+    ]
+    #uncover("3-")[
+    - *Option 2:* _Explicit Refinement Types_
+        ```lean
+        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Prop
+        inductive Stlc.Var : Ctx -> Nat -> Ty -> Prop
+        ```
+        - Pros: coherence comes for free, can use tactics
+        - Cons: annoying to define things by induction on well-typed terms
+    ]
 ]
 
 #slide[
