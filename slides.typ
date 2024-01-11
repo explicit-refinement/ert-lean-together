@@ -219,17 +219,30 @@
         inductive Wk: Ctx -> Ctx
         | nil: Wk [] []
         | lift: Wk Γ Δ -> Wk (A::Γ) (A::Δ)
-        | step: Wk Γ Δ -> Wk Γ (A::Δ)  
+        | step: Wk Γ Δ -> Wk (A::Γ) Δ  
         ```
         #uncover("2-")[
             ```lean
 
-            theorem Stlc.wk (ρ: Wk Γ Δ): HasType Δ A -> HasType Γ A
-            | var v => var (v.wk ρ)
-            | app s t => app (wk ρ s) (wk ρ t)
-            | lam A t => lam A (wk ρ.lift t)
+            def Var.wk: Wk Γ Δ -> Var Δ A -> Var Γ A
+            | lift ρ, head => head
+            | lift ρ, tail v
+            | step ρ, v => tail (v.wk ρ)
             ```
         ]
+    ]
+]
+
+#slide[
+    = Weakening
+    #align(horizon)[
+    ```lean
+        def Stlc.wk (ρ: Wk Γ Δ): Stlc Δ A -> Stlc Γ A
+        | var v => var (v.wk ρ)
+        | app s t => app (s.wk ρ) (t.wk ρ)
+        | lam s => lam (s.wk ρ.lift)
+        | unit => unit
+        ```
     ]
 ]
 
@@ -257,7 +270,6 @@
         | var -- ???
         | app (s t: Stlc)
         | lam (A: Ty) (t: Stlc)
-        | app (s t: Stlc)
         | nil
         ```))
         #only("3-", ```lean
@@ -265,7 +277,6 @@
         | var (n: ℕ)
         | app (s t: Stlc)
         | lam (A: Ty) (t: Stlc)
-        | app (s t: Stlc)
         | nil
         ```)
         ]),
@@ -298,53 +309,52 @@
     = Typing Judgements
     ```lean
     inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
-    ```
-    ```lean
-    | var : HasVar Γ n A -> HasTy Γ (var n) A
-    ```
-    ```lean
+    | var : Var Γ n A -> HasTy Γ (var n) A
     | app : HasTy Γ s (fn A B) 
         -> HasTy Γ t A 
         -> HasTy Γ (app s t) B
-    ```
-    ```lean
     | lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
+    | nil : HasTy Γ nil unit
     ```
-    ```lean
-    | unit : HasTy Γ nil unit
-    ```
-    ```lean
-    inductive Stlc.HasVar : Ctx -> Nat -> Ty -> Type
-    | head : HasVar 0 (A :: Γ)
-    | tail : HasVar n Γ -> HasVar (n + 1) (A :: Γ)
-    ```
+    #uncover("2-")[
+        ```lean
+
+        inductive Var : Ctx -> Nat -> Ty -> Type
+        | head : Var (A :: Γ) 0 A
+        | tail : Var Γ n A -> Var (B :: Γ) (n + 1) A
+        ```
+    ]
 ]
 
 #slide[
     = Coherence
-    - *Option 1:* _Explicit Refinement Types_
-        ```lean
-        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Prop
-        inductive Stlc.HasVar : Ctx -> Nat -> Ty -> Prop
-        ```
-        - Pros: coherence comes for free, can use tactics
-        - Cons: annoying to define things by induction on well-typed terms
-    - *Option 2:* _Adding Nothing to HOL_
+    #uncover("2-")[
+    - *Option 1:* _Adding Nothing to HOL_
         ```lean
         theorem Stlc.HasTy.coherence (H H': HasTy Γ s A) : H = H'
         ```
         - Pros: very easy to define things by induction on well-typed terms
         - Cons: doesn't erase quite the same as `Prop`...
+    ]
+    #uncover("3-")[
+    - *Option 2:* _Explicit Refinement Types_
+        ```lean
+        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Prop
+        inductive Stlc.Var : Ctx -> Nat -> Ty -> Prop
+        ```
+        - Pros: coherence comes for free, can use tactics
+        - Cons: annoying to define things by induction on well-typed terms
+    ]
 ]
 
 #slide[
     = Weakening: Intrinsic
     #align(center + horizon)[
         ```lean
-        inductive Wk: Ctx -> Ctx
-        | nil: Wk [] []
-        | lift: Wk Γ Δ -> Wk (A::Γ) (A::Δ)
-        | step: Wk Γ Δ -> Wk Γ (A::Δ)  
+        inductive Wk: Ctx -> Ctx -> Type
+        | id: Wk [] []
+        | lift: Wk Γ Δ -> Wk (A :: Γ) (A :: Δ)
+        | step: Wk Γ Δ -> Wk (A :: Γ) Δ
         ```
         #uncover("2-")[
             *Question*: how to weaken _terms_?
@@ -356,10 +366,10 @@
     = Weakening: Extrinsic
     #align(left + horizon)[
         ```lean
-        inductive Wk: (Nat -> Nat) -> Ctx -> Ctx
+        inductive Wk: (Nat -> Nat) -> Ctx -> Ctx -> Type
         | nil: Wk ρ [] []
         | lift: Wk ρ Γ Δ -> Wk (liftWk ρ) (A::Γ) (A::Δ)
-        | step: Wk ρ Γ Δ -> Wk (stepWk ρ) Γ (A::Δ)  
+        | step: Wk ρ Γ Δ -> Wk (stepWk ρ) (A::Γ) Δ  
         ```
         #only("-3")[
             #uncover("2-")[
@@ -379,7 +389,7 @@
         #only("4-")[
             ```lean
 
-            def Var.wk: Wk ρ Γ Δ -> Var Γ A -> Var Δ A
+            def Var.wk: Wk ρ Γ Δ -> Var Δ A -> Var Γ A
             | lift R, head => head
             | lift R, tail v
             | step R, v => tail (v.wk R)
@@ -395,7 +405,7 @@
         def Stlc.wk (ρ: Nat -> Nat) : Stlc -> Stlc
         | var n => var (ρ n)
         | app s t => app (wk ρ s) (wk ρ t)
-        | lam A t => lam A (wk (liftWk ρ) t)
+        | lam t => lam (wk (liftWk ρ) t)
         | nil => nil
         ```
         #uncover("2-")[
@@ -420,7 +430,7 @@
     = Weakening Derivations
     #align(horizon)[
         ```lean
-        theorem Stlc.HasTy.wk (R: Wk ρ Γ Δ): HasTy Δ s A 
+        theorem HasTy.wk (R: Wk ρ Γ Δ): HasTy Δ s A 
             -> HasTy Γ (wk ρ s) A
         | var v => v.wk R
         | app s t => app (wk R s) (wk R t)
@@ -463,7 +473,7 @@
 
             def liftSubst (σ: Nat -> Stlc) : Nat -> Stlc
             | 0 => var 0
-            | n + 1 => (subst σ n).wk (stepWk id)
+            | n + 1 => (σ n).wk (stepWk id)
             ```
         ]
     ]
@@ -473,15 +483,15 @@
     = Substitution
     #align(horizon)[
         ```lean
-        def Subst (σ: Nat -> Stlc) (Γ Δ: Ctx -> Ctx): Type := 
-          ∀{n}, HasVar Δ n A -> HasTy Γ (σ n) A
+        def Subst (σ: Nat -> Stlc) (Γ Δ: Ctx): Type := 
+          ∀{n A}, Var Δ n A -> HasTy Γ (σ n) A
         ```
         #uncover("2-")[
             ```lean
-            
+
             def Subst.lift (S: Subst σ Γ Δ): Subst (liftSubst σ) (A::Γ) (A::Δ)
-            | head => var head
-            | tail v => (S v).wk (Wk.step Wk.id)
+            | _, _, head => var head
+            | _, _, tail v => (S v).wk (Wk.step Wk.id)
             ```
         ]
     ]
@@ -491,12 +501,29 @@
     = Substitution
     #align(horizon)[
         ```lean
-        def HasTy.subst (S: Subst σ Γ Δ): HasTy Δ s A 
+        def Subst.lift (S: Subst σ Γ Δ): Subst (liftSubst σ) (A::Γ) (A::Δ)
+        | _, _, head => var head
+        | _, _, tail v => (S v).wk (Wk.step Wk.id)
+
+        theorem liftWk_id: liftWk id = id 
+            := by funext v; cases v <;> rfl
+        def Wk.id: {Γ: Ctx} -> Wk id Γ Γ
+        | [] => nil
+        | _::_ => liftWk_id ▸ lift Wk.id
+        ```
+    ]
+]
+
+#slide[
+    = Substitution
+    #align(horizon)[
+        ```lean
+        def HasTy.subst (S: Subst σ Γ Δ): HasTy Δ s A
             -> HasTy Γ (s.subst σ) A
         | var v => S v
         | app s t => app (subst S s) (subst S t)
-        | lam A t => lam A (subst S.lift t)
-        | unit => unit  
+        | lam t => lam (subst S.lift t)
+        | nil => nil
         ```
     ]
 ]
