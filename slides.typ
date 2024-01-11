@@ -29,7 +29,7 @@
 #slide[
     = The Plan
     #line-by-line[
-        - Speedrun simply-typed lambda calculus tutorial for de-Bruijn indices
+        - Speedrun STLC w/ de-Bruijn indices tutorial
             - See #link("https://leanprover.github.io/lean4/doc/examples/deBruijn.lean.html")[Dependent de Bruijn indices in the Lean Manual]
         - Sketch syntactic weakening and substitution #newmark
         - Sketch semantic weakening and substitution #newmark
@@ -574,36 +574,102 @@
 
 #slide[
     = Type semantics
-    #align(center + horizon, 
-    grid(columns: 2, gutter: 3em,
-        $[| ℕ |] = ℕ$,
-        $[| A -> B |] = [| A |] -> #uncover("2-", optm) [| B |]$,
-        uncover("3-", $[| dot |] = bold(1)$),
-        uncover("3-", 
-            $[| Γ, x: A |] = #uncover("4-", optm) [|A|] × [| Γ |]$)
+    #align(horizon, 
+    stack(dir: ttb, spacing: 3em,
+        [
+            #only("1-6", stack(dir: ltr, spacing: 3em,
+                    uncover("2-", $[| bold(1) |] = bold(1)$),
+                    uncover("3-", $[| ℕ |] = ℕ$),
+                    uncover("4-", $[| A -> B |] = [| A |] -> #uncover("5-", optm) [| B |]$)
+            ))
+            #only("7-")[
+                ```lean
+                def Ty.den: Ty -> Type
+                | nil => Unit
+                | nat => Nat
+                | fn A B => A.den -> Option (B.den)
+                ```
+            ]
+        ]
+        ,
+        [
+            #only("1-7", stack(dir: ltr, spacing: 3em,
+                uncover("5-", $[| dot |] = bold(1)$),
+                uncover("6-", 
+                    $[| Γ, x: A |] = #uncover("4-", optm) [|A|] × [| Γ |]$)
+            ))
+            #only("8-")[
+                ```lean
+                inductive Ctx.den: Ctx -> Type
+                | nil: Ctx.den []
+                | cons: Option (Ty.den A) 
+                    -> Ctx.den Γ 
+                    -> Ctx.den (A::Γ)
+                ```
+            ]
+        ]
+
     ))
 ]
 
 #slide[
-    = Type semantics
+    = Term semantics
     #align(horizon)[
         ```lean
-        def Ty.den: Ty -> Type
-        | nil => Unit
-        | nat => Nat
-        | fn A B => A.den -> Option (B.den)
-
-        inductive Ctx.den: Ctx -> Type
-        | nil: Ctx.den []
-        | cons: Option (Ty.den A) 
-            -> Ctx.den Γ 
-            -> Ctx.den (A::Γ)
+        def HasTy.den: HasTy Γ s A -> Ctx.den Γ -> Option A.den
         ```
     ]
 ]
 
 #slide[
-    = Term semantics
+    = Variable semantics
+    #align(horizon)[
+        ```lean
+        def HasTy.den: HasTy Γ s A -> Ctx.den Γ -> Option A.den
+        | var v, G => v.den G
+        ```
+        #uncover("-2")[
+            ```lean
+
+            def Var.den: Var Γ n A -> Ctx.den Γ -> Option A.den
+            | head, Ctx.den.cons a _ => a
+            | tail v, Ctx.den.cons _ G => v.den G
+            ```
+        ]
+    ]
+]
+
+#slide[
+    = Application semantics
+    #align(horizon)[
+        ```lean
+        def HasTy.den: HasTy Γ s A -> Ctx.den Γ -> Option A.den
+        | var v, G => v.den G
+        | app s t, G => do
+          let s <- s.den G
+          let t <- t.den G
+          s t
+        ```
+    ]
+]
+
+#slide[
+    = Lambda semantics
+    #align(horizon)[
+        ```lean
+        def HasTy.den: HasTy Γ s A -> Ctx.den Γ -> Option A.den
+        | var v, G => v.den G
+        | app s t, G => do
+          let s <- s.den G
+          let t <- t.den G
+          s t
+        | lam t, G => pure (λx => t.den (Ctx.den.cons x G))
+        ```
+    ]
+]
+
+#slide[
+    = Constant semantics
     #align(horizon)[
         ```lean
         def HasTy.den: HasTy Γ s A -> Ctx.den Γ -> Option A.den
@@ -667,14 +733,14 @@
         def Subst.den: {Γ Δ: _} -> Subst σ Γ Δ -> Γ.den -> Δ.den
         | _, [], _, _ => Ctx.den.nil
         | _, _::_, S, G => Ctx.den.cons
-        ((S head).den G)
-        (den (Subst.uncons S) G)
+          ((S head).den G)
+          (den (Subst.uncons S) G)
 
         ```
         #uncover("2-")[
             ```lean
             def Var.subst_den: (S: Subst σ Γ Δ) -> (v: Var Δ n A)
-            -> ∀{G: Γ.den}, v.den (S.den G) = (S v).den G
+              -> ∀{G: Γ.den}, v.den (S.den G) = (S v).den G
             | S, head, G => rfl
             | S, tail v, G => by simp [den, Var.subst_den]; rfl
             ```
@@ -695,6 +761,23 @@
         | lam t I => sorry
         | _ => simp [den, *]
         ```
+    ]
+]
+
+#let donemark = text(green, "✓")
+
+#focus-slide[
+    = Recap
+]
+
+#slide[
+    = The Plan
+    #line-by-line[
+        - Speedrun STLC w/ de-Bruijn indices tutorial #donemark
+        - Sketch syntactic weakening and substitution #donemark
+        - Sketch semantic weakening and substitution #donemark
+        - Sketch refinement types 
+        - *Hopefully*: sketch _semantic regularity_ 
     ]
 ]
 
