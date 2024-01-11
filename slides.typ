@@ -751,12 +751,149 @@
 
 #slide[
     = Dependent Terms
-    ...
+    ```lean
+    inductive Term: Type
+    -- Types (New!)
+    | pi (k: Bool) (A: Term) (B: Term)
+    | unit
+    | nat
+    | eq (A: Term) (s t: Term)
+    -- ...
+
+    -- Terms
+    | var (n: Nat)
+    | lam (k: Bool) (A: Term) (t: Term)
+    -- ...
+    ```
+]
+
+#slide[
+    = Type Erasure
+    #align(horizon)[
+        ```lean
+        def Term.ty: Term -> Ty
+        | pi true A B => A.ty.fn B.ty
+        | pi false _ B => Ty.unit.fn B.ty
+        | nat => Ty.nat
+        | _ => Ty.unit
+        ```
+    ]
+]
+
+#slide[
+    = Term Erasure
+    #align(horizon)[
+        ```lean
+        def Term.stlc: Term -> Stlc
+        | var n => Stlc.var n
+        | app s t => s.stlc.app t.stlc
+        | lam true A t => t.stlc.lam A.ty
+        | lam false _ t => t.stlc.lam Ty.unit
+        | nil => Stlc.nil
+        | cnst n => Stlc.cnst n
+        | _ => Stlc.abort Ty.unit
+        ```
+    ]
+]
+
+#slide[
+    = Syntactic Weakening
+    #align(horizon)[
+        ```lean
+        def Term.wk (ρ: Nat -> Nat) : Term -> Term
+        | pi k A B => pi k (wk ρ A) (wk ρ B)
+        | eq A s t => eq (wk ρ A) (wk ρ s) (wk ρ t)
+
+        | var n => var (ρ n)
+        | app s t => app (wk ρ s) (wk ρ t)
+        | lam k A t => lam k A (wk (liftWk ρ) t)
+
+        | t => t
+        ```
+    ]
+]
+
+#slide[
+    = Syntactic Substitution
+    #align(horizon)[
+        ```lean
+        def Term.subst (σ: Nat -> Term) : Term -> Term
+        | pi k A B => pi k (subst σ A) (subst σ B)
+        | eq A s t => eq (subst σ A) (subst σ s) (subst σ t)
+
+        | var n => σ n
+        | app s t => app (subst σ s) (subst σ t)
+        | lam k A t => lam k A (subst (liftDSubst σ) t)
+
+        | t => t
+        ```
+    ]
 ]
 
 #slide[
     = Dependent Contexts
-    ...
+    #align(horizon)[
+        ```lean
+        def DCtx := List (Bool × Term)
+        ```
+        #uncover("2-")[
+            ```lean
+
+            def DCtx.stlc: DCtx -> Ctx
+            | [] => []
+            | ⟨true, A⟩::Γ => A.ty :: stlc Γ
+            | ⟨false, _⟩::Γ => Ty.unit :: stlc Γ
+            ```
+        ]
+        #uncover("3-")[
+            ```lean
+
+            def DCtx.gstlc: DCtx -> Ctx
+            | [] => []
+            | ⟨_, A⟩::Γ => A.ty :: gstlc Γ
+            ```
+        ]
+    ]
+]
+
+#slide[
+    = Annotations
+    #align(center + horizon)[
+        ```lean
+        inductive Annot: Type
+        | ty
+        | tm (k: Bool) (A: Term)
+        ```
+    ]
+]
+
+#slide[
+    = Variables
+    #align(horizon)[
+        ```lean
+        inductive DVar: DCtx -> Nat -> Annot -> Type
+        ```
+        #only("2-")[
+            ```lean
+            | head: k ≥ k' 
+                -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
+            ```
+        ]
+        #only("3-")[
+            ```lean
+            | tail: DVar Γ n (tm k A) 
+                -> DVar (X::Γ) (n + 1) (tm k (A.wk (stepWk id)))
+            ```
+        ]
+        #only("4-")[
+            ```lean
+
+            def DVar.ghost: DVar Γ n (tm k A) -> DVar Γ n (tm false A)
+            | head H => head (by simp)
+            | tail v => tail (ghost v)
+            ```
+        ]
+    ]
 ]
 
 #slide[

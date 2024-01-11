@@ -232,10 +232,11 @@ def liftDSubst (σ: Nat -> Term) : Nat -> Term
 def Term.subst (σ: Nat -> Term) : Term -> Term
 | pi k A B => pi k (subst σ A) (subst σ B)
 | eq A s t => eq (subst σ A) (subst σ s) (subst σ t)
-| var n => σ n
 
+| var n => σ n
 | app s t => app (subst σ s) (subst σ t)
 | lam k A t => lam k A (subst (liftDSubst σ) t)
+
 | t => t
 
 def Term.subst0 (s: Term): Nat -> Term
@@ -276,10 +277,9 @@ def DCtx.gstlc: DCtx -> Ctx
 
 inductive DVar: DCtx -> Nat -> Annot -> Type
 | head: k ≥ k' -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
-| tail: DVar Γ n a -> DVar (⟨k, A⟩::Γ) (n + 1) a
+| tail: DVar Γ n (tm k A) -> DVar (X::Γ) (n + 1) (tm k (A.wk (stepWk id)))
 
-def DVar.no_ty: DVar Γ n ty -> False
-| tail v => v.no_ty
+def DVar.no_ty (v: DVar Γ n ty): False := match v with .
 
 inductive DHasTy: DCtx -> Term -> Annot -> Type
 | pi: DHasTy Γ A ty -> DHasTy (⟨k, A⟩::Γ) B ty
@@ -312,7 +312,6 @@ def DHasTy.ty_wk: DHasTy Γ s ty -> (s.wk ρ).ty = s.ty
 | unit => rfl
 | nat => rfl
 | eq _ _ _ => rfl
-| var v => v.no_ty.elim
 
 def DVar.ghost: DVar Γ n (tm k A) -> DVar Γ n (tm false A)
 | head H => head (by simp)
