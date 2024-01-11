@@ -167,88 +167,6 @@
     ))
 ]
 
-#focus-slide[
-    = Intrinsic vs. Extrinsic Typing
-]
-
-#focus-slide[
-    = Intrinsic Typing
-]
-
-#slide[
-    #align(left + horizon)[
-        ```lean
-        inductive Stlc: Ctx -> Ty -> Type
-        | var: Var Γ A -> Stlc Γ A
-        | lam: Stlc (A :: Γ) B -> Stlc Γ (fn A B)
-        | app: Stlc Γ (fn A B) -> Stlc Γ A -> Stlc Γ B
-        | nil: Stlc Γ unit
-        | cnst: Nat -> Stlc Γ nat
-        | abort: Stlc Γ A
-        ```
-        #uncover("3-")[
-        ```lean
-
-        -- NOTE: *not* a `Prop`!
-        ```
-        ]
-        #uncover("2-")[
-        ```lean
-        inductive Var: Ctx -> Ty -> Type
-        | head: Var (A :: Γ) A
-        | tail: Var Γ A -> Var (B :: Γ) A
-        ```
-        ]
-    ]
-]
-
-#slide[
-    = Weakening
-    #align(left + horizon)[
-        ```lean
-        inductive Wk: Ctx -> Ctx
-        | nil: Wk [] []
-        | lift: Wk Γ Δ -> Wk (A::Γ) (A::Δ)
-        | step: Wk Γ Δ -> Wk (A::Γ) Δ  
-        ```
-        #uncover("2-")[
-            ```lean
-
-            def Var.wk: Wk Γ Δ -> Var Δ A -> Var Γ A
-            | lift ρ, head => head
-            | lift ρ, tail v
-            | step ρ, v => tail (v.wk ρ)
-            ```
-        ]
-    ]
-]
-
-#slide[
-    = Weakening
-    #align(horizon)[
-    ```lean
-        def Stlc.wk (ρ: Wk Γ Δ): Stlc Δ A -> Stlc Γ A
-        | var v => var (v.wk ρ)
-        | app s t => app (s.wk ρ) (t.wk ρ)
-        | lam s => lam (s.wk ρ.lift)
-        | nil => nil
-        | cnst => cnst
-        | abort => abort
-        ```
-    ]
-]
-
-#slide[
-    = Substitution
-    #align(center + horizon)[
-        *Omitted for time*
-    ]
-]
-
-#focus-slide[
-    = Extrinsic Typing
-]
-
 #slide[
     = Untyped Syntax
     #align(center + horizon,  grid(
@@ -287,17 +205,17 @@
     = de-Bruijn Indices
     #align(center + horizon, grid(columns: 3, gutter: 2em,
         $mkred(λ x). mkblue(λ y). bold(mkgreen(λ z)). bold(mkgreen(z))$,
-        $==>$,
-        $mkred(λ) mkblue(λ) bold(mkgreen(λ)) bold(mkgreen(0))$,
-        $mkred(λ x). bold(mkblue(λ y)). mkgreen(λ z). mkblue(y)$,
-        $==>$,
-        $mkred(λ) bold(mkblue(λ)) mkgreen(λ) bold(mkblue(1))$,
-        $bold(mkred(λ x)). mkblue(λ y). mkgreen(λ z). bold(mkred(x))$,
-        $==>$,
-        $bold(mkred(λ)) mkblue(λ) mkgreen(λ) bold(mkred(2))$,
-        $bold(#[$w: A$]) ⊢  mkred(λ x). mkblue(λ y). mkgreen(λ z). bold(w)$,
-        $==>$,
-        $bold(A) ⊢ mkred(λ) mkblue(λ) mkgreen(λ) bold(3)$
+        uncover("2-", $==>$),
+        uncover("2-", $mkred(λ) mkblue(λ) bold(mkgreen(λ)) bold(mkgreen(0))$),
+        uncover("3-", $mkred(λ x). bold(mkblue(λ y)). mkgreen(λ z). mkblue(y)$),
+        uncover("4-", $==>$),
+        uncover("4-", $mkred(λ) bold(mkblue(λ)) mkgreen(λ) bold(mkblue(1))$),
+        uncover("5-", $bold(mkred(λ x)). mkblue(λ y). mkgreen(λ z). bold(mkred(x))$),
+        uncover("6-", $==>$),
+        uncover("6-", $bold(mkred(λ)) mkblue(λ) mkgreen(λ) bold(mkred(2))$),
+        uncover("7-", $-: A, bold(#[$w: B,$]) -: C ⊢  mkred(λ x). mkblue(λ y). mkgreen(λ z). bold(w)$),
+        uncover("8-", $==>$),
+        uncover("8-", $A, bold(B), C ⊢ mkred(λ) mkblue(λ) mkgreen(λ) bold(4)$)
     ))
 ]
 
@@ -351,22 +269,7 @@
 ]
 
 #slide[
-    = Weakening: Intrinsic
-    #align(center + horizon)[
-        ```lean
-        inductive Wk: Ctx -> Ctx -> Type
-        | id: Wk [] []
-        | lift: Wk Γ Δ -> Wk (A :: Γ) (A :: Δ)
-        | step: Wk Γ Δ -> Wk (A :: Γ) Δ
-        ```
-        #uncover("2-")[
-            *Question*: how to weaken _terms_?
-        ]
-    ]
-]
-
-#slide[
-    = Weakening: Extrinsic
+    = Weakening
     #align(left + horizon)[
         ```lean
         inductive Wk: (Nat -> Nat) -> Ctx -> Ctx -> Type
@@ -445,6 +348,7 @@
     ]
 ]
 
+/*
 #slide[
     = Weakening: aside
     #align(horizon)[
@@ -462,6 +366,7 @@
         ```
     ]
 ]
+*/
 
 #slide[
     = Syntax Substitution
@@ -729,17 +634,6 @@
             
             (by $η$) 
         ]
-    ]
-]
-
-#slide[
-    = Aside: why the spurious $bold(1)$ parameter?
-
-    #align(horizon)[
-        $
-        |hat(λ) (n, p): { n: ℕ | ⊥ } . sans("abort") med p|
-        = λ-: bold(1). ⊥
-        $
     ]
 ]
 
@@ -1118,7 +1012,7 @@
 
 #slide[
     = Irrelevance
-    #align(center)[
+    #align(horizon)[
         ```lean
         theorem DHasTy.irrel: (H: DHasTy Γ s (tm true A))
           -> H.gstlc.den G = H.stlc.den (DCtx.downgrade G)
@@ -1132,4 +1026,15 @@
   ---
 
   #link("mailto:jeg74@cam.ac.uk")[`jeg74@cam.ac.uk`]
+]
+
+#slide[
+    = Aside: why the spurious $bold(1)$ parameter?
+
+    #align(horizon)[
+        $
+        |hat(λ) (n, p): { n: ℕ | ⊥ } . sans("abort") med p|
+        = λ-: bold(1). ⊥
+        $
+    ]
 ]
