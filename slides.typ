@@ -633,13 +633,40 @@
 #slide[
     = Semantic Substitution
 
-    ...
+    #align(horizon)[
+        ```lean
+        def Subst.den: {Γ Δ: _} -> Subst σ Γ Δ -> Γ.den -> Δ.den
+        | _, [], _, _ => Ctx.den.nil
+        | _, _::_, S, G => Ctx.den.cons
+        ((S head).den G)
+        (den (Subst.uncons S) G)
+
+        ```
+        #uncover("2-")[
+            ```lean
+            def Var.subst_den: (S: Subst σ Γ Δ) -> (v: Var Δ n A)
+            -> ∀{G: Γ.den}, v.den (S.den G) = (S v).den G
+            | S, head, G => rfl
+            | S, tail v, G => by simp [den, Var.subst_den]; rfl
+            ```
+        ]
+    ]
 ]
 
 #slide[
     = Semantic Substitution
-
-    ...
+    
+    //TODO: fix sorry?
+    #align(horizon)[
+        ```lean
+        def HasTy.subst_den (S: Subst σ Γ Δ) (h: HasTy Δ s A):
+        ∀{G: Γ.den}, h.den (S.den G) = (h.subst S).den G := by
+        induction h generalizing Γ σ with
+        | var v => exact Var.subst_den S v
+        | lam t I => sorry
+        | _ => simp [den, *]
+        ```
+    ]
 ]
 
 #focus-slide[

@@ -170,3 +170,25 @@ theorem HasTy.wk_den (R: Wk ρ Γ Δ) (h: HasTy Δ a A)
   | var v => exact Var.wk_den v R
   | lam t I => intros; simp [den, <-I]; rfl
   | _ => simp [den, *]
+
+
+def Subst.uncons (S: Subst σ Γ (A::Δ)): Subst (σ ∘ Nat.succ) Γ Δ
+| n, A, v => @S (n + 1) A (tail v)
+
+def Subst.den: {Γ Δ: _} -> Subst σ Γ Δ -> Γ.den -> Δ.den
+| _, [], _, _ => Ctx.den.nil
+| _, _::_, S, G => Ctx.den.cons
+  ((S head).den G)
+  (den (Subst.uncons S) G)
+
+def Var.subst_den: (S: Subst σ Γ Δ) -> (v: Var Δ n A)
+  -> ∀{G: Γ.den}, v.den (S.den G) = (S v).den G
+| S, head, G => rfl
+| S, tail v, G => by simp [den, Var.subst_den]; rfl
+
+def HasTy.subst_den (S: Subst σ Γ Δ) (h: HasTy Δ s A):
+  ∀{G: Γ.den}, h.den (S.den G) = (h.subst S).den G := by
+  induction h generalizing Γ σ with
+  | var v => exact Var.subst_den S v
+  | lam t I => sorry
+  | _ => simp [den, *]
