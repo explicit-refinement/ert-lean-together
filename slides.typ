@@ -876,13 +876,13 @@
         #only("2-")[
             ```lean
             | head: k ≥ k' 
-                -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
+              -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
             ```
         ]
         #only("3-")[
             ```lean
             | tail: DVar Γ n (tm k A) 
-                -> DVar (X::Γ) (n + 1) (tm k (A.wk (stepWk id)))
+              -> DVar (X::Γ) (n + 1) (tm k (A.wk (stepWk id)))
             ```
         ]
         #only("4-")[
@@ -897,13 +897,114 @@
 ]
 
 #slide[
-    = Typing Judgements
-    ...
+    = Typing Judgements: Types
+    ```lean
+    inductive DHasTy: DCtx -> Term -> Annot -> Type
+    ```
+    #only("2-")[
+        ```lean
+        | pi: DHasTy Γ A ty -> DHasTy (⟨k, A⟩::Γ) B ty
+        -> DHasTy Γ (pi k A B) ty
+        ```
+    ]
+    #only("3-")[
+        ```lean
+        | eq: DHasTy Γ A ty 
+        -> DHasTy Γ s (tm k A) 
+        -> DHasTy Γ t (tm k A)
+        -> DHasTy Γ (eq A s t) ty
+        ```
+    ]
+    #only("4-")[
+        ```lean
+        | unit: DHasTy Γ unit ty
+        | nat: DHasTy Γ nat ty
+        ```
+    ]
+]
+
+#slide[
+    = Typing Judgements: Terms
+    ```lean
+    inductive DHasTy: DCtx -> Term -> Annot -> Type
+    ```
+    #only("2-4")[
+        ```lean
+        | var: DVar Γ n a -> DHasTy Γ (var n) a
+        ```
+    ]
+    #only("3-4")[
+        ```lean
+        | lam:
+        DHasTy (⟨k, A⟩::Γ) t (tm k' B)
+          -> DHasTy Γ (lam k A t) (tm k' (pi k A B))
+        ```
+    ]
+    #only("4-")[
+        ```lean
+        | app:
+        DHasTy Γ s (tm k (pi k' A B))
+          -> DHasTy Γ t (tm k A)
+          -> k' ≥ k
+          -> DHasTy Γ (app s t) (tm k (B.subst t.subst0))
+        ```
+    ]
+    #only("5-")[
+        ```lean
+
+        def Term.subst0 (s: Term): Nat -> Term
+        | 0 => s
+        | n + 1 => var n
+        ```
+    ]
+]
+
+#slide[
+    = Typing Judgements: Proofs
+    ```lean
+    inductive DHasTy: DCtx -> Term -> Annot -> Type
+    | refl: DHasTy Γ a (tm k A)
+      -> DHasTy Γ (refl a) (tm k' (eq A a a))
+    ```
+    #only("2-")[
+        ```lean
+        | nil: DHasTy Γ nil (tm k unit)
+        | cnst: DHasTy Γ nat (tm k nat)
+        ```
+    ]
+    #only("4-")[
+        ```lean
+
+        def DHasTy.ghost: DHasTy Γ s (tm k A) 
+          -> DHasTy Γ s (tm false A)
+        ```
+    ]
 ]
 
 #slide[
     = Erasure
-    ...
+    #align(horizon)[
+        ```lean
+        def DHasTy.gstlc: DHasTy Γ s (tm k A) 
+          -> HasTy Γ.gstlc s.stlc A.ty
+        ```
+        #only("2-")[
+            ```lean
+
+            def DHasTy.stlc: DHasTy Γ s (tm true A) 
+              -> HasTy Γ.stlc s.stlc A.ty
+            ```
+        ]
+        #only("-3")[
+            ```lean
+            
+            theorem DHasTy.ty_wk: DHasTy Γ s ty 
+              -> (s.wk ρ).ty = s.ty
+            theorem DHasTy.ty_subst: DHasTy Γ s ty 
+              -> (s.subst σ).ty = s.ty
+            ```
+        ]
+    ]
 ]
 
 #slide[

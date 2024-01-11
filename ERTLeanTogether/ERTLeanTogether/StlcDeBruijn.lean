@@ -304,11 +304,20 @@ inductive DHasTy: DCtx -> Term -> Annot -> Type
 | refl: DHasTy Γ a (tm k A)
   -> DHasTy Γ (refl a) (tm k' (eq A a a))
 
-def DHasTy.ty_wk: DHasTy Γ s ty -> (s.wk ρ).ty = s.ty
+theorem DHasTy.ty_wk: DHasTy Γ s ty -> (s.wk ρ).ty = s.ty
 | pi A B => by
   rename_i k _
   cases k <;>
   simp only [Term.wk, Term.ty, A.ty_wk, B.ty_wk]
+| unit => rfl
+| nat => rfl
+| eq _ _ _ => rfl
+
+theorem DHasTy.ty_subst: DHasTy Γ s ty -> (s.subst σ).ty = s.ty
+| pi A B => by
+  rename_i k _
+  cases k <;>
+  simp only [Term.subst, Term.ty, A.ty_subst, B.ty_subst]
 | unit => rfl
 | nat => rfl
 | eq _ _ _ => rfl
