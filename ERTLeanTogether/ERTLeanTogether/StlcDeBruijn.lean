@@ -174,7 +174,6 @@ theorem HasTy.wk_den (R: Wk ρ Γ Δ) (h: HasTy Δ a A)
   | lam t I => intros; simp [den, <-I]; rfl
   | _ => simp [den, *]
 
-
 def Subst.uncons (S: Subst σ Γ (A::Δ)): Subst (σ ∘ Nat.succ) Γ Δ
 | n, A, v => @S (n + 1) A (tail v)
 

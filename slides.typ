@@ -1065,16 +1065,48 @@
     ]
 ]
 
+#slide[
+    = Regularity
+    #align(horizon)[
+        ```lean
+        def DHasTy.reg: DHasTy Γ s (tm k A) -> DHasTy Γ A ty
+        ```
+    ]
+]
+
 #focus-slide[
     = Semantics of refinement types
-    ...
-    ... proof requirements ...
 ]
 
 #slide[
     = Semantic Regularity
+    #align(horizon)[
+        ```lean
+        def DHasTy.den_ty: DHasTy Γ s ty 
+          -> Γ.gstlc.den -> s.ty.den -> Prop
+        ```
+        #only("2-")[
+            ```lean
+
+            def VCtx.den: VCtx Γ -> Γ.gstlc.den -> Prop
+            ```
+        ]
+        #only("3-")[
+            ```lean
+
+            def DHasTy.den_reg: (HΓ: VCtx Γ)
+              -> (H: DHasTy Γ s (tm k A))
+              -> HΓ.den G
+              -> ∃a, some a = H.gstlc.den G ∧ H.reg.den_ty G a
+            ```
+        ]
+    ]
+]
+
+#slide[
+    = Irrelevance
+
     ...
-    ... proof requirements ...
 ]
 
 #focus-slide[
