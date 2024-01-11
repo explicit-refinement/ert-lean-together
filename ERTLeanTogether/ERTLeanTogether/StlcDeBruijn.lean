@@ -1,7 +1,7 @@
 namespace StlcDeBruijn
 
 inductive Ty
-| unit
+| nat
 | fn (A B: Ty)
 
 open Ty
@@ -12,7 +12,7 @@ inductive Stlc: Type
 | var (n: Nat)
 | app (s t: Stlc)
 | lam (A: Ty) (t: Stlc)
-| nil
+| cnst (n: Nat)
 
 def liftWk (ρ: Nat -> Nat): Nat -> Nat
 | 0 => 0
@@ -24,7 +24,7 @@ def Stlc.wk (ρ: Nat -> Nat) : Stlc -> Stlc
 | var n => var (ρ n)
 | app s t => app (wk ρ s) (wk ρ t)
 | lam A t => lam A (wk (liftWk ρ) t)
-| nil => nil
+| t => t
 
 open Stlc
 
@@ -32,12 +32,12 @@ inductive Var : Ctx -> Nat -> Ty -> Type
 | head : Var (A :: Γ) 0 A
 | tail : Var Γ n A -> Var (B :: Γ) (n + 1) A
 
-theorem Var.ty_coherence (v: Var Γ n A) (v': Var Γ n B): A = B :=
+theorem Var.ty_coh (v: Var Γ n A) (v': Var Γ n B): A = B :=
   by induction v with
   | head => cases v'; rfl
   | tail _ I => cases v'; rw [I]; assumption
 
-theorem Var.coherence (v v': Var Γ n A): v = v' := by
+theorem Var.coh (v v': Var Γ n A): v = v' := by
   induction v with
   | head => cases v'; rfl
   | tail v I => cases v'; rw [I]
@@ -50,21 +50,21 @@ inductive HasTy : Ctx -> Stlc -> Ty -> Type
     -> HasTy Γ t A
     -> HasTy Γ (app s t) B
 | lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
-| nil : HasTy Γ nil unit
+| cnst : HasTy Γ (cnst n) nat
 
-theorem HasTy.ty_coherence: HasTy Γ s A -> HasTy Γ s B -> A = B
-| var v, var v' => Var.ty_coherence v v'
-| app s _, app s' _ => by cases (ty_coherence s s'); rfl
-| lam t, lam t' => by rw [ty_coherence t t']
-| nil, nil => rfl
+theorem HasTy.ty_coh: HasTy Γ s A -> HasTy Γ s B -> A = B
+| var v, var v' => Var.ty_coh v v'
+| app s _, app s' _ => by cases (ty_coh s s'); rfl
+| lam t, lam t' => by rw [ty_coh t t']
+| cnst, cnst => rfl
 
-theorem HasTy.coherence: (h h': HasTy Γ s A) -> h = h'
-| var v, var v' => by rw [Var.coherence v v']
+theorem HasTy.coh: (h h': HasTy Γ s A) -> h = h'
+| var v, var v' => by rw [Var.coh v v']
 | app s t, app s' t' => by
-  cases (ty_coherence s s')
-  rw [coherence s s', coherence t t']
-| lam t, lam t' => by rw [coherence t t']
-| nil, nil => rfl
+  cases (ty_coh s s')
+  rw [coh s s', coh t t']
+| lam t, lam t' => by rw [coh t t']
+| cnst, cnst => rfl
 
 open HasTy
 
@@ -84,7 +84,7 @@ def HasTy.wk (R: Wk ρ Γ Δ): HasTy Δ s A -> HasTy Γ (wk ρ s) A
 | var v => var (v.wk R)
 | app s t => app (wk R s) (wk R t)
 | lam t => lam (wk R.lift t)
-| nil => nil
+| cnst => cnst
 
 def liftSubst (σ: Nat -> Stlc) : Nat -> Stlc
 | 0 => var 0
@@ -94,7 +94,7 @@ def Stlc.subst (σ: Nat -> Stlc) : Stlc -> Stlc
 | var n => σ n
 | app s t => app (subst σ s) (subst σ t)
 | lam A t => lam A (subst (liftSubst σ) t)
-| nil => nil
+| t => t
 
 def Subst (σ: Nat -> Stlc) (Γ Δ: Ctx): Type :=
   ∀{n A}, Var Δ n A -> HasTy Γ (σ n) A
@@ -114,4 +114,4 @@ def HasTy.subst (S: Subst σ Γ Δ): HasTy Δ s A
 | var v => S v
 | app s t => app (subst S s) (subst S t)
 | lam t => lam (subst S.lift t)
-| nil => nil
+| cnst => cnst

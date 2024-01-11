@@ -64,6 +64,7 @@
 #let stlc-succ(c, p) = rule(name: $sans(s)$, c, p)
 #let stlc-natrec(c, z, s) = rule(name: $sans(i)$, c, z, s)
 #let stlc-abort(ctx) = rule(name: $⊥$, $Γ ⊢ ⊥: A$, $$)
+#let stlc-const(n) = rule(name: $n$, $Γ ⊢ #n: ℕ$, $$)
 
 #slide[
     #align(center + horizon, stack(dir: ttb, spacing: 2em,
@@ -73,7 +74,7 @@
         ),
         stack(dir: ltr, spacing: 2em,
             only("4-", proof-tree(stlc-lam($Γ ⊢ λ x: A. t: A -> B$, $Γ, x: A ⊢ t: B$))),
-            only("5-", proof-tree(stlc-unit($Γ$))),
+            only("5-", proof-tree(stlc-const($Γ$))),
         ),
         only("2-", $Γ = x: A, y: B, z: C, ...", etc."$)
     ))
@@ -152,7 +153,7 @@
         uncover("2-", $ ⇝ $),
         uncover("2-", align(left, ```lean
         inductive Ty: Type
-        | unit
+        | nat
         | fn (A B: Ty)
         ```)),
         uncover("3-", align(left, $Γ, Δ ::= dot | Γ, x: A$)),
@@ -193,7 +194,7 @@
         ]
         #uncover("4-")[
         ```lean
-        | unit: Stlc Γ unit
+        | cnst: Nat -> Stlc Γ nat
         ```
         ]
         #uncover("7-")[
@@ -241,7 +242,7 @@
         | var v => var (v.wk ρ)
         | app s t => app (s.wk ρ) (t.wk ρ)
         | lam s => lam (s.wk ρ.lift)
-        | unit => unit
+        | t => t
         ```
     ]
 ]
@@ -270,14 +271,14 @@
         | var -- ???
         | app (s t: Stlc)
         | lam (A: Ty) (t: Stlc)
-        | nil
+        | cnst (n: Nat)
         ```))
         #only("3-", ```lean
         inductive Stlc: Type
-        | var (n: ℕ)
+        | var (n: Nat)
         | app (s t: Stlc)
         | lam (A: Ty) (t: Stlc)
-        | nil
+        | cnst (n: Nat)
         ```)
         ]),
     )) 
@@ -314,7 +315,7 @@
         -> HasTy Γ t A 
         -> HasTy Γ (app s t) B
     | lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
-    | nil : HasTy Γ nil unit
+    | cnst : HasTy Γ (cnst n) nat
     ```
     #uncover("2-")[
         ```lean
@@ -331,8 +332,8 @@
     #uncover("2-")[
     - *Option 1:* _Adding Nothing to HOL_
         ```lean
-        theorem HasTy.ty_coherence: HasTy Γ s A -> HasTy Γ s B -> A = B
-        theorem HasTy.coherence (H H': HasTy Γ s A) : H = H'
+        theorem HasTy.ty_coh: HasTy Γ s A -> HasTy Γ s B -> A = B
+        theorem HasTy.coh (H H': HasTy Γ s A) : H = H'
         ```
         - Pros: very easy to define things by induction on well-typed terms
         - Cons: doesn't erase quite the same as `Prop`...
@@ -407,7 +408,7 @@
         | var n => var (ρ n)
         | app s t => app (wk ρ s) (wk ρ t)
         | lam t => lam (wk (liftWk ρ) t)
-        | nil => nil
+        | t => t
         ```
         #uncover("2-")[
             ```lean
@@ -436,7 +437,7 @@
         | var v => v.wk R
         | app s t => app (wk R s) (wk R t)
         | lam A t => lam A (wk R.lift t)
-        | nil => nil
+        | cnst => cnst
         ```
     ]
 ]
@@ -467,7 +468,7 @@
         | var n => σ n
         | app s t => app (subst σ s) (subst σ t)
         | lam A t => lam A (subst (liftSubst σ) t)
-        | nil => nil
+        | t => t
         ```
         #uncover("2-")[
             ```lean
@@ -524,7 +525,7 @@
         | var v => S v
         | app s t => app (subst S s) (subst S t)
         | lam t => lam (subst S.lift t)
-        | nil => nil
+        | cnst => cnst
         ```
     ]
 ]
