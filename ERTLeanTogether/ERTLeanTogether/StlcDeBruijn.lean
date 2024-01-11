@@ -274,6 +274,11 @@ def DCtx.gstlc: DCtx -> Ctx
 | [] => []
 | ⟨_, A⟩::Γ => A.ty :: gstlc Γ
 
+def DCtx.downgrade: {Γ: DCtx} -> Γ.gstlc.den -> Γ.stlc.den
+| [], Ctx.den.nil => Ctx.den.nil
+| ⟨true, _⟩::_, Ctx.den.cons a G => Ctx.den.cons a (downgrade G)
+| ⟨false, _⟩::_, Ctx.den.cons _ G => Ctx.den.cons (some ()) (downgrade G)
+
 inductive DVar: DCtx -> Nat -> Annot -> Type
 | head: k ≥ k' -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
 | tail: DVar Γ n (tm k A) -> DVar (X::Γ) (n + 1) (tm k (A.wk (stepWk id)))
@@ -387,4 +392,9 @@ def DHasTy.den_reg: (HΓ: VCtx Γ)
   -> (H: DHasTy Γ s (tm k A))
   -> HΓ.den G
   -> ∃a, some a = H.gstlc.den G ∧ H.reg.den_ty G a
+  := sorry
+
+
+theorem DHasTy.irrel: (H: DHasTy Γ s (tm true A))
+  -> H.gstlc.den G = H.stlc.den (DCtx.downgrade G)
   := sorry

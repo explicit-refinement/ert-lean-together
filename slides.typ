@@ -855,6 +855,21 @@
 ]
 
 #slide[
+    = Downgrade
+    #align(horizon)[
+        ```lean
+        def DCtx.downgrade: {Γ: DCtx} -> Γ.gstlc.den -> Γ.stlc.den
+        | [], Ctx.den.nil 
+          => Ctx.den.nil
+        | ⟨true, _⟩::_, Ctx.den.cons a G 
+          => Ctx.den.cons a (downgrade G)
+        | ⟨false, _⟩::_, Ctx.den.cons _ G 
+          => Ctx.den.cons (some ()) (downgrade G)
+        ```
+    ]
+]
+
+#slide[
     = Annotations
     #align(center + horizon)[
         ```lean
@@ -1092,7 +1107,7 @@
         #only("3-")[
             ```lean
 
-            def DHasTy.den_reg: (HΓ: VCtx Γ)
+            theorem DHasTy.den_reg: (HΓ: VCtx Γ)
               -> (H: DHasTy Γ s (tm k A))
               -> HΓ.den G
               -> ∃a, some a = H.gstlc.den G ∧ H.reg.den_ty G a
@@ -1103,8 +1118,12 @@
 
 #slide[
     = Irrelevance
-
-    ...
+    #align(center)[
+        ```lean
+        theorem DHasTy.irrel: (H: DHasTy Γ s (tm true A))
+          -> H.gstlc.den G = H.stlc.den (DCtx.downgrade G)
+        ```
+    ]
 ]
 
 #focus-slide[
