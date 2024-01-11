@@ -674,21 +674,94 @@
 ]
 
 #slide[
-    ...
+    = Refinement Types
+    #align(horizon)[
+        $
+        #only("3-", $(a: $) ℕ#only("3-", $)$) 
+            -> #only("2-", ${b :$)ℕ #only("2-", $| b ≤ 10 #only("3-", $∧ b ≤ a$) }$)
+        $
+        $
+        #only("4-", $∀a: ℕ. { b : ℕ | a + b ≥ a }$)
+        #only("5-", $≃ {b: ℕ | ∀a, a + b ≥ a}$)
+        #only("6-", $≃ {b: ℕ | b ≠ 0}$)
+        $
+    ]
 ]
 
 #slide[
-    = Weakening
-    ...
+    = Ghosts and proofs
+    #align(horizon)[
+        $
+        ∀a: ℕ, { ℓ: [ℕ] | sans("len") med ℓ = a } -> { n: ℕ | n = a }
+        $
+        #only("2-", 
+        $
+        ∀a, b: ℕ. a + b = b + a
+        $
+        )
+    ]
 ]
 
 #slide[
-    = Substitution
-    ...
+    = Refined Terms
+    $
+    ∀a: ℕ, { ℓ: [ℕ] | sans("len") med ℓ = a } -> { n: ℕ | n = a }
+    $
+    #align(left + horizon)[
+        #only("2-")[
+            $#only("3-", $|$)hat(λ) a: ℕ. λ (ℓ, p):  { ℓ: [ℕ] | sans("len") med ℓ = a }.
+                (sans("len") med ℓ, p)#only("3-", $|$)$
+        ]
+        #only("3-")[
+
+            $= λ-: bold(1). |λ (ℓ, p):  { ℓ: [ℕ] | sans("len") med ℓ = a }.
+                (sans("len") med ℓ, p)|$
+        ]
+        #only("4-")[
+
+            $= λ-: bold(1). λ ℓ: [ℕ]. |(sans("len") med ℓ, p)|$
+        ]
+        #only("5-")[
+
+            $= λ-: bold(1). λ ℓ: [ℕ]. sans("len") med ℓ$ 
+        ]
+        #only("5-")[
+
+            $= λ-: bold(1). sans("len")$ 
+            
+            (by $η$) 
+        ]
+    ]
+]
+
+#slide[
+    = Aside: why the spurious $bold(1)$ parameter?
+
+    #align(horizon)[
+        $
+        |hat(λ) (n, p): { n: ℕ | ⊥ } . sans("abort") med p|
+        = λ-: bold(1). ⊥
+        $
+    ]
 ]
 
 #focus-slide[
-    = Semantics of refinement types
+    = So how do we represent this in Lean?
+]
+
+#slide[
+    = Dependent Terms
+    ...
+]
+
+#slide[
+    = Dependent Contexts
+    ...
+]
+
+#slide[
+    = Typing Judgements
+    ...
 ]
 
 #slide[
@@ -697,36 +770,27 @@
 ]
 
 #slide[
+    = Weakening
+    ...
+    ... proof requirements ...
+]
+
+#slide[
+    = Substitution
+    ...
+    ... proof requirements ...
+]
+
+#focus-slide[
+    = Semantics of refinement types
+    ...
+    ... proof requirements ...
+]
+
+#slide[
     = Semantic Regularity
     ...
-]
-
-#focus-slide[
-    = Representing Refinement Types in Lean
-]
-
-#slide[
-    = Coherence
-    ...
-]
-
-#slide[
-    = Doing Big Inductions
-    ...
-]
-
-#focus-slide[
-    = Experience Report
-]
-
-#slide[
-    = _Explicit Refinement Types_
-    ...
-]
-
-#slide[
-    = _Adding Nothing to HOL_
-    ...
+    ... proof requirements ...
 ]
 
 #focus-slide[
