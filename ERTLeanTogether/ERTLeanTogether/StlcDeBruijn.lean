@@ -32,6 +32,16 @@ inductive Var : Ctx -> Nat -> Ty -> Type
 | head : Var (A :: Γ) 0 A
 | tail : Var Γ n A -> Var (B :: Γ) (n + 1) A
 
+theorem Var.ty_coherence (v: Var Γ n A) (v': Var Γ n B): A = B :=
+  by induction v with
+  | head => cases v'; rfl
+  | tail _ I => cases v'; rw [I]; assumption
+
+theorem Var.coherence (v v': Var Γ n A): v = v' := by
+  induction v with
+  | head => cases v'; rfl
+  | tail v I => cases v'; rw [I]
+
 open Var
 
 inductive HasTy : Ctx -> Stlc -> Ty -> Type
@@ -41,6 +51,20 @@ inductive HasTy : Ctx -> Stlc -> Ty -> Type
     -> HasTy Γ (app s t) B
 | lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
 | nil : HasTy Γ nil unit
+
+theorem HasTy.ty_coherence: HasTy Γ s A -> HasTy Γ s B -> A = B
+| var v, var v' => Var.ty_coherence v v'
+| app s _, app s' _ => by cases (ty_coherence s s'); rfl
+| lam t, lam t' => by rw [ty_coherence t t']
+| nil, nil => rfl
+
+theorem HasTy.coherence: (h h': HasTy Γ s A) -> h = h'
+| var v, var v' => by rw [Var.coherence v v']
+| app s t, app s' t' => by
+  cases (ty_coherence s s')
+  rw [coherence s s', coherence t t']
+| lam t, lam t' => by rw [coherence t t']
+| nil, nil => rfl
 
 open HasTy
 

@@ -331,7 +331,8 @@
     #uncover("2-")[
     - *Option 1:* _Adding Nothing to HOL_
         ```lean
-        theorem Stlc.HasTy.coherence (H H': HasTy Γ s A) : H = H'
+        theorem HasTy.ty_coherence: HasTy Γ s A -> HasTy Γ s B -> A = B
+        theorem HasTy.coherence (H H': HasTy Γ s A) : H = H'
         ```
         - Pros: very easy to define things by induction on well-typed terms
         - Cons: doesn't erase quite the same as `Prop`...
