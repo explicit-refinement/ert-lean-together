@@ -1,3 +1,6 @@
+import Std.Data.Bool
+import Mathlib.Init.Order.Defs
+
 namespace StlcDeBruijn
 
 inductive Ty
@@ -192,3 +195,189 @@ def HasTy.subst_den (S: Subst σ Γ Δ) (h: HasTy Δ s A):
   | var v => exact Var.subst_den S v
   | lam t I => sorry
   | _ => simp [den, *]
+
+inductive Term: Type
+-- Types
+| pi (k: Bool) (A: Term) (B: Term)
+| unit
+| nat
+| eq (A: Term) (s t: Term)
+
+-- Terms
+| var (n: Nat)
+| app (s t: Term)
+| lam (k: Bool) (A: Term) (t: Term)
+| nil
+| cnst (n: Nat)
+
+-- Proofs
+| refl (a: Term)
+
+open Term
+
+def Term.wk (ρ: Nat -> Nat) : Term -> Term
+| pi k A B => pi k (wk ρ A) (wk ρ B)
+| eq A s t => eq (wk ρ A) (wk ρ s) (wk ρ t)
+
+| var n => var (ρ n)
+| app s t => app (wk ρ s) (wk ρ t)
+| lam k A t => lam k A (wk (liftWk ρ) t)
+
+| t => t
+
+def liftDSubst (σ: Nat -> Term) : Nat -> Term
+| 0 => var 0
+| n + 1 => (σ n).wk (stepWk id)
+
+def Term.subst (σ: Nat -> Term) : Term -> Term
+| pi k A B => pi k (subst σ A) (subst σ B)
+| eq A s t => eq (subst σ A) (subst σ s) (subst σ t)
+| var n => σ n
+
+| app s t => app (subst σ s) (subst σ t)
+| lam k A t => lam k A (subst (liftDSubst σ) t)
+| t => t
+
+def Term.subst0 (s: Term): Nat -> Term
+| 0 => s
+| n + 1 => var n
+
+def Term.ty: Term -> Ty
+| pi true A B => A.ty.fn B.ty
+| pi false _ B => Ty.unit.fn B.ty
+| nat => Ty.nat
+| _ => Ty.unit
+
+def Term.stlc: Term -> Stlc
+| var n => Stlc.var n
+| app s t => s.stlc.app t.stlc
+| lam true A t => t.stlc.lam A.ty
+| lam false _ t => t.stlc.lam Ty.unit
+| nil => Stlc.nil
+| cnst n => Stlc.cnst n
+| _ => Stlc.abort Ty.unit
+
+inductive Annot: Type
+| ty
+| tm (k: Bool) (A: Term)
+
+open Annot
+
+def DCtx := List (Bool × Term)
+
+def DCtx.stlc: DCtx -> Ctx
+| [] => []
+| ⟨true, A⟩::Γ => A.ty :: stlc Γ
+| ⟨false, _⟩::Γ => Ty.unit :: stlc Γ
+
+def DCtx.gstlc: DCtx -> Ctx
+| [] => []
+| ⟨_, A⟩::Γ => A.ty :: gstlc Γ
+
+inductive DVar: DCtx -> Nat -> Annot -> Type
+| head: k ≥ k' -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
+| tail: DVar Γ n a -> DVar (⟨k, A⟩::Γ) (n + 1) a
+
+def DVar.no_ty: DVar Γ n ty -> False
+| tail v => v.no_ty
+
+inductive DHasTy: DCtx -> Term -> Annot -> Type
+| pi: DHasTy Γ A ty -> DHasTy (⟨k, A⟩::Γ) B ty
+  -> DHasTy Γ (pi k A B) ty
+| unit: DHasTy Γ unit ty
+| nat: DHasTy Γ nat ty
+| eq: DHasTy Γ A ty -> DHasTy Γ s (tm k A) -> DHasTy Γ t (tm k A)
+  -> DHasTy Γ (eq A s t) ty
+
+| var: DVar Γ n a -> DHasTy Γ (var n) a
+| app:
+  DHasTy Γ s (tm k (pi k' A B))
+  -> DHasTy Γ t (tm k A)
+  -> k' ≥ k
+  -> DHasTy Γ (app s t) (tm k (B.subst t.subst0))
+| lam:
+  DHasTy (⟨k, A⟩::Γ) t (tm k' B)
+  -> DHasTy Γ (lam k A t) (tm k' (pi k A B))
+| nil: DHasTy Γ nil (tm k unit)
+| cnst: DHasTy Γ nat (tm k nat)
+
+| refl: DHasTy Γ a (tm k A)
+  -> DHasTy Γ (refl a) (tm k' (eq A a a))
+
+def DHasTy.ty_wk: DHasTy Γ s ty -> (s.wk ρ).ty = s.ty
+| pi A B => by
+  rename_i k _
+  cases k <;>
+  simp only [Term.wk, Term.ty, A.ty_wk, B.ty_wk]
+| unit => rfl
+| nat => rfl
+| eq _ _ _ => rfl
+| var v => v.no_ty.elim
+
+def DVar.ghost: DVar Γ n (tm k A) -> DVar Γ n (tm false A)
+| head H => head (by simp)
+| tail v => tail (ghost v)
+
+def DHasTy.ghost: DHasTy Γ s (tm k A) -> DHasTy Γ s (tm false A)
+| var v => var v.ghost
+| app s t H => app (ghost s) (ghost t) (by simp)
+| lam t => lam (ghost t)
+| nil => nil
+| cnst => cnst
+| refl a => refl a
+
+def DHasTy.stlc: DHasTy Γ s (tm true A) -> HasTy Γ.stlc s.stlc A.ty
+| var v => sorry
+| app s t H => sorry
+| lam t => sorry  -- HasTy.lam (sorry ▸ t.stlc)
+| nil => HasTy.nil
+| cnst => sorry -- HasTy.cnst?
+| refl a => sorry -- HasTy.nil?
+
+def DHasTy.gstlc: DHasTy Γ s (tm k A) -> HasTy Γ.gstlc s.stlc A.ty
+| var v => sorry
+| app s t H => sorry
+| lam t => sorry  -- HasTy.lam (sorry ▸ t.stlc)
+| nil => HasTy.nil
+| cnst => sorry -- HasTy.cnst?
+| refl a => sorry -- HasTy.nil?
+
+def DHasTy.den_ty: DHasTy Γ s ty -> Γ.gstlc.den -> s.ty.den -> Prop
+  := sorry
+
+inductive DWk: (Nat -> Nat) -> DCtx -> DCtx -> Type
+| nil: DWk ρ [] []
+| lift: DWk ρ Γ Δ -> k ≥ k'
+  -> DWk (liftWk ρ) (⟨k, A⟩::Γ) (⟨k', A.wk ρ⟩::Δ)
+| step: DWk ρ Γ Δ -> DWk (stepWk ρ) (X::Γ) Δ
+
+def DVar.wk: DWk ρ Γ Δ -> DVar Δ n a -> DVar Γ (ρ n) a :=
+  sorry
+
+def DHasTy.wk (R: DWk ρ Γ Δ): DHasTy Δ s a -> DHasTy Γ (s.wk ρ) a :=
+  sorry
+
+def DSubst (σ: Nat -> Term) (Γ Δ: DCtx): Type :=
+  ∀{n a}, DVar Δ n a -> DHasTy Γ (σ n) a
+
+def DHasTy.subst (S: DSubst σ Γ Δ):
+  DHasTy Δ s a -> DHasTy Γ (s.subst σ) a :=
+  sorry
+
+inductive VCtx: DCtx -> Type
+| nil: VCtx []
+| cons: DHasTy Γ A ty -> VCtx Γ -> VCtx (⟨k, A⟩::Γ)
+
+def VCtx.den: VCtx Γ -> Γ.gstlc.den -> Prop
+| nil, _ => true
+| cons H v, Ctx.den.cons a G =>
+  ∃b, some b = a ∧ H.den_ty G b ∧ v.den G
+
+def DHasTy.reg: DHasTy Γ s (tm k A) -> DHasTy Γ A ty
+  := sorry
+
+def DHasTy.den_reg: (HΓ: VCtx Γ)
+  -> (H: DHasTy Γ s (tm k A))
+  -> HΓ.den G
+  -> ∃a, some a = H.gstlc.den G ∧ H.reg.den_ty G a
+  := sorry
