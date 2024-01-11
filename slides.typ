@@ -901,13 +901,13 @@
     ```lean
     inductive DHasTy: DCtx -> Term -> Annot -> Type
     ```
-    #only("2-")[
+    #only("2-4")[
         ```lean
         | pi: DHasTy Γ A ty -> DHasTy (⟨k, A⟩::Γ) B ty
         -> DHasTy Γ (pi k A B) ty
         ```
     ]
-    #only("3-")[
+    #only("3-4")[
         ```lean
         | eq: DHasTy Γ A ty 
         -> DHasTy Γ s (tm k A) 
@@ -915,10 +915,19 @@
         -> DHasTy Γ (eq A s t) ty
         ```
     ]
-    #only("4-")[
+    #only("4")[
         ```lean
         | unit: DHasTy Γ unit ty
         | nat: DHasTy Γ nat ty
+        ```
+    ]
+    #only("5-")[
+        ```lean
+        -- ...
+
+        inductive VCtx: DCtx -> Type
+        | nil: VCtx []
+        | cons: DHasTy Γ A ty -> VCtx Γ -> VCtx (⟨k, A⟩::Γ)
         ```
     ]
 ]
@@ -927,6 +936,7 @@
     = Typing Judgements: Terms
     ```lean
     inductive DHasTy: DCtx -> Term -> Annot -> Type
+    -- ...
     ```
     #only("2-4")[
         ```lean
@@ -963,6 +973,7 @@
     = Typing Judgements: Proofs
     ```lean
     inductive DHasTy: DCtx -> Term -> Annot -> Type
+    -- ...
     | refl: DHasTy Γ a (tm k A)
       -> DHasTy Γ (refl a) (tm k' (eq A a a))
     ```
@@ -997,7 +1008,7 @@
         ]
         #only("-3")[
             ```lean
-            
+
             theorem DHasTy.ty_wk: DHasTy Γ s ty 
               -> (s.wk ρ).ty = s.ty
             theorem DHasTy.ty_subst: DHasTy Γ s ty 
@@ -1009,14 +1020,49 @@
 
 #slide[
     = Weakening
-    ...
-    ... proof requirements ...
+    #align(horizon)[
+        ```lean
+        inductive DWk: (Nat -> Nat) -> DCtx -> DCtx -> Type
+        | nil: DWk ρ [] []
+        | step: DWk ρ Γ Δ -> DWk (stepWk ρ) (X::Γ) Δ
+        ```
+        #only("2-")[
+            ```lean
+            | lift: DWk ρ Γ Δ -> k ≥ k'
+              -> DWk (liftWk ρ) (⟨k, A⟩::Γ) (⟨k', A.wk ρ⟩::Δ)
+            ```
+        ]
+        #only("3-")[
+            ```lean
+
+            def DVar.wk: DWk ρ Γ Δ -> DVar Δ n a -> DVar Γ (ρ n) a
+            ```
+        ]
+        #only("4-")[
+            ```lean
+
+            def DHasTy.wk (R: DWk ρ Γ Δ): 
+              DHasTy Δ s a -> DHasTy Γ (s.wk ρ) a
+            ```
+        ]
+    ]
 ]
 
 #slide[
     = Substitution
-    ...
-    ... proof requirements ...
+    #align(horizon)[
+        ```lean
+        def DSubst (σ: Nat -> Term) (Γ Δ: DCtx): Type :=
+            ∀{n a}, DVar Δ n a -> DHasTy Γ (σ n) a
+        ```
+        #only("2-")[
+            ```lean
+
+            def DHasTy.subst (S: DSubst σ Γ Δ):
+            DHasTy Δ s a -> DHasTy Γ (s.subst σ) a
+            ```
+        ]
+    ]
 ]
 
 #focus-slide[
