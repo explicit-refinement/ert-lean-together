@@ -473,12 +473,30 @@
     = Substitution
     #align(horizon)[
         ```lean
-        theorem Stlc.HasTy.wk (R: Wk ρ Γ Δ): HasTy Δ s A 
-            -> HasTy Γ (wk ρ s) A
-        | var v => v.wk R
-        | app s t => app (wk R s) (wk R t)
-        | lam A t => lam A (wk R.lift t)
-        | nil => nil
+        def Subst (σ: Nat -> Stlc) (Γ Δ: Ctx -> Ctx): Type := 
+          ∀{n}, HasVar Δ n A -> HasTy Γ (σ n) A
+        ```
+        #uncover("2-")[
+            ```lean
+            
+            def Subst.lift (S: Subst σ Γ Δ): Subst (liftSubst σ) (A::Γ) (A::Δ)
+            | head => var head
+            | tail v => (S v).wk (Wk.step Wk.id)
+            ```
+        ]
+    ]
+]
+
+#slide[
+    = Substitution
+    #align(horizon)[
+        ```lean
+        def HasTy.subst (S: Subst σ Γ Δ): HasTy Δ s A 
+            -> HasTy Γ (s.subst σ) A
+        | var v => S v
+        | app s t => app (subst S s) (subst S t)
+        | lam A t => lam A (subst S.lift t)
+        | unit => unit  
         ```
     ]
 ]
