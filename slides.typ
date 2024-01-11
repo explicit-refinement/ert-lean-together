@@ -63,8 +63,8 @@
 #let stlc-zero(ctx) = rule(name: $0$, $Γ ⊢ 0: ℕ$, $$)
 #let stlc-succ(c, p) = rule(name: $sans(s)$, c, p)
 #let stlc-natrec(c, z, s) = rule(name: $sans(i)$, c, z, s)
-#let stlc-abort(ctx) = rule(name: $⊥$, $Γ ⊢ ⊥: A$, $$)
-#let stlc-const(n) = rule(name: $n$, $Γ ⊢ #n: ℕ$, $$)
+#let stlc-abort(ctx, A) = rule(name: $⊥$, $Γ ⊢ attach(⊥, br: A): #A$, $$)
+#let stlc-const(ctx, n) = rule(name: $n$, $ctx ⊢ #n: ℕ$, $$)
 
 #slide[
     #align(center + horizon, stack(dir: ttb, spacing: 2em,
@@ -74,8 +74,12 @@
         ),
         stack(dir: ltr, spacing: 2em,
             only("4-", proof-tree(stlc-lam($Γ ⊢ λ x: A. t: A -> B$, $Γ, x: A ⊢ t: B$))),
-            only("5-", proof-tree(stlc-const($Γ$))),
-        ),
+        ), 
+        stack(dir: ltr, spacing: 2em,
+            only("5-", proof-tree(stlc-unit($Γ$))),
+            only("6-", proof-tree(stlc-const($Γ$, $n$))),
+            only("7-", proof-tree(stlc-abort($Γ$, $A$))),
+        ), 
         only("2-", $Γ = x: A, y: B, z: C, ...", etc."$)
     ))
 ]
@@ -149,10 +153,11 @@
     #align(center + horizon,  grid(
         columns: 3,
         gutter: 3em,
-        align(left, $A, B ::= bold(1) | A -> B$),
+        align(left, $A, B ::= bold(1) | ℕ | A -> B$),
         uncover("2-", $ ⇝ $),
         uncover("2-", align(left, ```lean
         inductive Ty: Type
+        | unit
         | nat
         | fn (A B: Ty)
         ```)),
@@ -176,34 +181,20 @@
     #align(left + horizon)[
         ```lean
         inductive Stlc: Ctx -> Ty -> Type
-        ```
-        #uncover("5-")[
-        ```lean
         | var: Var Γ A -> Stlc Γ A
-        ```
-        ]
-        #uncover("2-")[
-        ```lean
         | lam: Stlc (A :: Γ) B -> Stlc Γ (fn A B)
-        ```
-        ]
-        #uncover("3-")[
-        ```lean
         | app: Stlc Γ (fn A B) -> Stlc Γ A -> Stlc Γ B
-        ```
-        ]
-        #uncover("4-")[
-        ```lean
+        | nil: Stlc Γ unit
         | cnst: Nat -> Stlc Γ nat
+        | abort: Stlc Γ A
         ```
-        ]
-        #uncover("7-")[
+        #uncover("3-")[
         ```lean
 
         -- NOTE: *not* a `Prop`!
         ```
         ]
-        #uncover("6-")[
+        #uncover("2-")[
         ```lean
         inductive Var: Ctx -> Ty -> Type
         | head: Var (A :: Γ) A
@@ -242,7 +233,9 @@
         | var v => var (v.wk ρ)
         | app s t => app (s.wk ρ) (t.wk ρ)
         | lam s => lam (s.wk ρ.lift)
-        | t => t
+        | nil => nil
+        | cnst => cnst
+        | abort => abort
         ```
     ]
 ]
@@ -263,7 +256,7 @@
     #align(center + horizon,  grid(
         columns: 3,
         gutter: 2em,
-        align(left, $s, t ::= x | s med t | λ x: A. t | ()$),
+        align(left, $s, t ::= x | s med t | λ x: A. t | () | n | attach(⊥, br: A)$),
         uncover("2-", $ ⇝ $),
         align(left,[ 
         #only("-2", uncover("2-", ```lean
@@ -271,14 +264,18 @@
         | var -- ???
         | app (s t: Stlc)
         | lam (A: Ty) (t: Stlc)
+        | nil
         | cnst (n: Nat)
+        | abort (A: Ty)
         ```))
         #only("3-", ```lean
         inductive Stlc: Type
         | var (n: Nat)
         | app (s t: Stlc)
         | lam (A: Ty) (t: Stlc)
+        | nil
         | cnst (n: Nat)
+        | abort (A: Ty)
         ```)
         ]),
     )) 
@@ -308,18 +305,24 @@
 
 #slide[
     = Typing Judgements
-    ```lean
-    inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
-    | var : Var Γ n A -> HasTy Γ (var n) A
-    | app : HasTy Γ s (fn A B) 
-        -> HasTy Γ t A 
-        -> HasTy Γ (app s t) B
-    | lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
-    | cnst : HasTy Γ (cnst n) nat
-    ```
-    #uncover("2-")[
+    #align(horizon)[
         ```lean
+        inductive Stlc.HasTy : Ctx -> Stlc -> Ty -> Type
+        | var : Var Γ n A -> HasTy Γ (var n) A
+        | app : HasTy Γ s (fn A B) 
+            -> HasTy Γ t A 
+            -> HasTy Γ (app s t) B
+        | lam : HasTy (A :: Γ) t B -> HasTy Γ (lam A t) (fn A B)
+        | nil: HasTy Γ nil unit
+        | cnst : HasTy Γ (cnst n) nat
+        | abort: HasTy Γ (abort A) A
+        ```
+    ]
+]
 
+#slide[
+    #align(horizon)[
+        ```lean
         inductive Var : Ctx -> Nat -> Ty -> Type
         | head : Var (A :: Γ) 0 A
         | tail : Var Γ n A -> Var (B :: Γ) (n + 1) A
@@ -437,7 +440,9 @@
         | var v => v.wk R
         | app s t => app (wk R s) (wk R t)
         | lam A t => lam A (wk R.lift t)
+        | unit => unit
         | cnst => cnst
+        | abort => abort
         ```
     ]
 ]
@@ -525,7 +530,9 @@
         | var v => S v
         | app s t => app (subst S s) (subst S t)
         | lam t => lam (subst S.lift t)
+        | unit => unit
         | cnst => cnst
+        | abort => abort
         ```
     ]
 ]
@@ -534,41 +541,105 @@
     = What is a (denotational) semantics?
 ]
 
-#slide[
-    = Set semantics
+#let optm = $sans("Option")$
 
-    - TODO: context semantics
-    - TODO: type semantics
-    - TODO: judgement semantics
+#slide[
+    = Type semantics
+    #align(center + horizon, 
+    grid(columns: 2, gutter: 3em,
+        $[| ℕ |] = ℕ$,
+        $[| A -> B |] = [| A |] -> #uncover("2-", optm) [| B |]$,
+        uncover("3-", $[| dot |] = bold(1)$),
+        uncover("3-", 
+            $[| Γ, x: A |] = #uncover("4-", optm) [|A|] × [| Γ |]$)
+    ))
 ]
 
 #slide[
-    = Data types
+    = Type semantics
+    #align(horizon)[
+        ```lean
+        def Ty.den: Ty -> Type
+        | nil => Unit
+        | nat => Nat
+        | fn A B => A.den -> Option (B.den)
 
-    - TODO: products
-    - TODO: coproducts
-    - TODO: natural numbers
+        inductive Ctx.den: Ctx -> Type
+        | nil: Ctx.den []
+        | cons: Option (Ty.den A) 
+            -> Ctx.den Γ 
+            -> Ctx.den (A::Γ)
+        ```
+    ]
 ]
 
 #slide[
-    = Effects
-
-    - TODO: `abort` rule
-    - TODO: `Option` monad
+    = Term semantics
+    #align(horizon)[
+        ```lean
+        def HasTy.den: HasTy Γ s A -> Ctx.den Γ -> Option A.den
+        | var v, G => v.den G
+        | app s t, G => do
+          let s <- s.den G
+          let t <- t.den G
+          s t
+        | lam t, G => pure (λx => t.den (Ctx.den.cons x G))
+        | nil, G => pure ()
+        | @cnst _ n, _ => pure n
+        | abort, _ => none
+        ```
+    ]
 ]
 
 #slide[
     = Semantic Weakening
 
-    - TODO: semantics of a weakening
-    - TODO: statement
+    #align(horizon)[
+        ```lean
+        def Wk.den: Wk ρ Γ Δ -> Ctx.den Γ -> Ctx.den Δ
+        | nil, x => x
+        | lift ρ, Ctx.den.cons a G => Ctx.den.cons a (ρ.den G) 
+        | step ρ, Ctx.den.cons a G => ρ.den G
+        ```
+        #uncover("2-")[
+            ```lean
+
+            theorem Var.wk_den: (v: Var Δ n A) -> (R: Wk ρ Γ Δ)
+              -> ∀{G: Γ.den}, v.den (R.den G) = (v.wk R).den G
+            | head, lift R, Ctx.den.cons _ _ => rfl
+            | tail v, lift R, Ctx.den.cons _ _
+            | v, step R, Ctx.den.cons _ _ 
+                => by simp [Wk.den, den, v.wk_den R]
+            ```
+        ]
+    ]
+]
+
+#slide[
+    = Semantic Weakening
+
+    #align(horizon)[
+        ```lean
+        theorem HasTy.wk_den (R: Wk ρ Γ Δ) (h: HasTy Δ a A)
+        : ∀{G: Γ.den}, h.den (R.den G) = (h.wk R).den G := by
+        induction h generalizing ρ Γ with
+        | var v => exact Var.wk_den v R
+        | lam t I => intros; simp [den, <-I]; rfl
+        | _ => simp [den, *]
+        ```
+    ]
 ]
 
 #slide[
     = Semantic Substitution
 
-    - TODO: semantics of a substitution
-    - TODO: statement
+    ...
+]
+
+#slide[
+    = Semantic Substitution
+
+    ...
 ]
 
 #focus-slide[
