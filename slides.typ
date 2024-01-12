@@ -851,7 +851,51 @@
 ]
 
 #slide[
-    = Dependent Terms
+    = Refined Terms
+    ```lean
+    inductive Term: Type
+    -- Terms
+    | var (n: Nat)
+    | app (s t: Term)
+    | lam (A: Term) (t: Term)
+    | nil
+    | cnst (n: Nat)
+    ```
+]
+
+#slide[
+    = Ghost Binders
+    ```lean
+    inductive Term: Type
+    -- Terms
+    | var (n: Nat)
+    | app (s t: Term)
+    -- `true` for comp
+    -- `false` for ghosts
+    | lam (k: Bool) (A: Term) (t: Term)
+    | nil
+    | cnst (n: Nat)
+    ```
+]
+
+#slide[
+    = "Proofs"
+    ```lean
+    inductive Term: Type
+    -- Terms
+    | var (n: Nat)
+    | app (s t: Term)
+    | lam (k: Bool) (A: Term) (t: Term)
+    | nil
+    | cnst (n: Nat)
+
+    -- Proofs
+    | refl (a: Term)
+    ```
+]
+
+#slide[
+    = "Dependent Types"
     ```lean
     inductive Term: Type
     -- Types (New!)
@@ -859,7 +903,6 @@
     | unit
     | nat
     | eq (A: Term) (s t: Term)
-    -- ...
 
     -- Terms
     | var (n: Nat)
@@ -892,7 +935,7 @@
         | lam false _ t => t.stlc.lam Ty.unit
         | nil => Stlc.nil
         | cnst n => Stlc.cnst n
-        | _ => Stlc.abort Ty.unit
+        | _ => Stlc.nil
         ```
     ]
 ]
@@ -902,8 +945,10 @@
     #align(horizon)[
         ```lean
         def Term.wk (ρ: Nat -> Nat) : Term -> Term
+        -- new: types weaken just like terms
         | pi k A B => pi k (wk ρ A) (wk ρ B)
         | eq A s t => eq (wk ρ A) (wk ρ s) (wk ρ t)
+        --
 
         | var n => var (ρ n)
         | app s t => app (wk ρ s) (wk ρ t)
@@ -919,8 +964,10 @@
     #align(horizon)[
         ```lean
         def Term.subst (σ: Nat -> Term) : Term -> Term
+        -- new: types substitute just like terms
         | pi k A B => pi k (subst σ A) (subst σ B)
         | eq A s t => eq (subst σ A) (subst σ s) (subst σ t)
+        --
 
         | var n => σ n
         | app s t => app (subst σ s) (subst σ t)
@@ -942,8 +989,8 @@
 
             def DCtx.stlc: DCtx -> Ctx
             | [] => []
-            | ⟨true, A⟩::Γ => A.ty :: stlc Γ
-            | ⟨false, _⟩::Γ => Ty.unit :: stlc Γ
+            | ⟨true, A⟩::Γ => A.ty :: stlc Γ            -- computational
+            | ⟨false, _⟩::Γ => Ty.unit :: stlc Γ        -- ghost
             ```
         ]
         #uncover("3-")[
@@ -967,14 +1014,24 @@
         | ⟨true, _⟩::_, Ctx.den.cons a G 
           => Ctx.den.cons a (downgrade G)
         | ⟨false, _⟩::_, Ctx.den.cons _ G 
-          => Ctx.den.cons (some ()) (downgrade G)
+          => Ctx.den.cons none (downgrade G)
         ```
     ]
 ]
 
 #slide[
-    = Annotations
-    #align(center + horizon)[
+    = Typing Judgements
+    ```lean
+    inductive DHasTy: DCtx -> Term -> ??? -> Type
+    -- ...
+    ```
+    #line-by-line[
+        - `Ty` doesn't work since `Term` can have a dependent type
+        - `Term` works for terms, but we want to distinguish valid types...
+        - We also want to distinguish "ghost" terms versus "computational" ones
+        - *Solution*: introduce new `Annot` type
+    ]
+    #uncover("4-")[
         ```lean
         inductive Annot: Type
         | ty
@@ -984,51 +1041,22 @@
 ]
 
 #slide[
-    = Variables
-    #align(horizon)[
-        ```lean
-        inductive DVar: DCtx -> Nat -> Annot -> Type
-        ```
-        #only("2-")[
-            ```lean
-            | head: k ≥ k' 
-              -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
-            ```
-        ]
-        #only("3-")[
-            ```lean
-            | tail: DVar Γ n (tm k A) 
-              -> DVar (X::Γ) (n + 1) (tm k (A.wk (stepWk id)))
-            ```
-        ]
-        #only("4-")[
-            ```lean
-
-            def DVar.ghost: DVar Γ n (tm k A) -> DVar Γ n (tm false A)
-            | head H => head (by simp)
-            | tail v => tail (ghost v)
-            ```
-        ]
-    ]
-]
-
-#slide[
-    = Typing Judgements: Types
+    = Valid Types
     ```lean
     inductive DHasTy: DCtx -> Term -> Annot -> Type
     ```
     #only("2-4")[
         ```lean
         | pi: DHasTy Γ A ty -> DHasTy (⟨k, A⟩::Γ) B ty
-        -> DHasTy Γ (pi k A B) ty
+          -> DHasTy Γ (pi k A B) ty
         ```
     ]
     #only("3-4")[
         ```lean
         | eq: DHasTy Γ A ty 
-        -> DHasTy Γ s (tm k A) 
-        -> DHasTy Γ t (tm k A)
-        -> DHasTy Γ (eq A s t) ty
+          -> DHasTy Γ s (tm k A) 
+          -> DHasTy Γ t (tm k A)
+          -> DHasTy Γ (eq A s t) ty
         ```
     ]
     #only("4")[
@@ -1049,24 +1077,55 @@
 ]
 
 #slide[
-    = Typing Judgements: Terms
+    = Variables
+    #align(horizon)[
+        ```lean
+        inductive DHasTy: DCtx -> Term -> Annot -> Type
+        -- ...
+        | var: DVar Γ n a -> DHasTy Γ (var n) a
+        ```
+        #only("2-4")[
+        ```lean
+        inductive DVar: DCtx -> Nat -> Annot -> Type
+        ```
+        ]
+        #only("3-4")[
+            ```lean
+            | head: k ≥ k' 
+              -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
+            ```
+        ]
+        #only("4-4")[
+            ```lean
+            | tail: DVar Γ n (tm k A) 
+              -> DVar (X::Γ) (n + 1) (tm k (A.wk (stepWk id)))
+            ```
+        ]
+        #only("5-")[
+            ```lean
+
+            def DVar.ghost: DVar Γ n (tm k A) -> DVar Γ n (tm false A)
+            | head H => head (by simp)
+            | tail v => tail (ghost v)
+            ```
+        ]
+    ]
+]
+
+#slide[
+    = Terms
     ```lean
     inductive DHasTy: DCtx -> Term -> Annot -> Type
     -- ...
     ```
-    #only("2-4")[
-        ```lean
-        | var: DVar Γ n a -> DHasTy Γ (var n) a
-        ```
-    ]
-    #only("3-4")[
+    #only("1")[
         ```lean
         | lam:
         DHasTy (⟨k, A⟩::Γ) t (tm k' B)
           -> DHasTy Γ (lam k A t) (tm k' (pi k A B))
         ```
     ]
-    #only("4-")[
+    #only("2-3")[
         ```lean
         | app:
         DHasTy Γ s (tm k (pi k' A B))
@@ -1075,7 +1134,7 @@
           -> DHasTy Γ (app s t) (tm k (B.subst t.subst0))
         ```
     ]
-    #only("5-")[
+    #only("3")[
         ```lean
 
         def Term.subst0 (s: Term): Nat -> Term
@@ -1083,10 +1142,16 @@
         | n + 1 => var n
         ```
     ]
+    #only("4-")[
+        ```lean
+        | nil: DHasTy Γ nil (tm k unit)
+        | cnst: DHasTy Γ nat (tm k nat)
+        ```
+    ]
 ]
 
 #slide[
-    = Typing Judgements: Proofs
+    = Proofs
     ```lean
     inductive DHasTy: DCtx -> Term -> Annot -> Type
     -- ...
@@ -1094,12 +1159,6 @@
       -> DHasTy Γ (refl a) (tm k' (eq A a a))
     ```
     #only("2-")[
-        ```lean
-        | nil: DHasTy Γ nil (tm k unit)
-        | cnst: DHasTy Γ nat (tm k nat)
-        ```
-    ]
-    #only("4-")[
         ```lean
 
         def DHasTy.ghost: DHasTy Γ s (tm k A) 
@@ -1122,7 +1181,7 @@
               -> HasTy Γ.stlc s.stlc A.ty
             ```
         ]
-        #only("-3")[
+        #only("3-")[
             ```lean
 
             theorem DHasTy.ty_wk: DHasTy Γ s ty 
@@ -1169,13 +1228,13 @@
     #align(horizon)[
         ```lean
         def DSubst (σ: Nat -> Term) (Γ Δ: DCtx): Type :=
-            ∀{n a}, DVar Δ n a -> DHasTy Γ (σ n) a
+          ∀{n a}, DVar Δ n a -> DHasTy Γ (σ n) a
         ```
         #only("2-")[
             ```lean
 
             def DHasTy.subst (S: DSubst σ Γ Δ):
-            DHasTy Δ s a -> DHasTy Γ (s.subst σ) a
+              DHasTy Δ s a -> DHasTy Γ (s.subst σ) a
             ```
         ]
     ]

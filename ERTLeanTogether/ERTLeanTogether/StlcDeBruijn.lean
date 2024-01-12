@@ -255,7 +255,7 @@ def Term.stlc: Term -> Stlc
 | lam false _ t => t.stlc.lam Ty.unit
 | nil => Stlc.nil
 | cnst n => Stlc.cnst n
-| _ => Stlc.abort Ty.unit
+| _ => Stlc.nil
 
 inductive Annot: Type
 | ty
@@ -277,7 +277,7 @@ def DCtx.gstlc: DCtx -> Ctx
 def DCtx.downgrade: {Γ: DCtx} -> Γ.gstlc.den -> Γ.stlc.den
 | [], Ctx.den.nil => Ctx.den.nil
 | ⟨true, _⟩::_, Ctx.den.cons a G => Ctx.den.cons a (downgrade G)
-| ⟨false, _⟩::_, Ctx.den.cons _ G => Ctx.den.cons (some ()) (downgrade G)
+| ⟨false, _⟩::_, Ctx.den.cons _ G => Ctx.den.cons none (downgrade G)
 
 inductive DVar: DCtx -> Nat -> Annot -> Type
 | head: k ≥ k' -> DVar (⟨k, A⟩::Γ) 0 (tm k' (A.wk (stepWk id)))
