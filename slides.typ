@@ -19,7 +19,7 @@
 
   University of Cambridge
   
-  January 11
+  January 12
 
   Lean Together 2024 -- Online
 ]
