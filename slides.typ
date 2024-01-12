@@ -586,12 +586,12 @@
     #align(horizon, 
     stack(dir: ttb, spacing: 3em,
         [
-            #only("1-6", stack(dir: ltr, spacing: 3em,
+            #only("1-8", stack(dir: ltr, spacing: 3em,
                     uncover("2-", $[| bold(1) |] = bold(1)$),
                     uncover("3-", $[| ℕ |] = ℕ$),
                     uncover("4-", $[| A -> B |] = [| A |] -> #uncover("5-", optm) [| B |]$)
             ))
-            #only("7-")[
+            #only("9-")[
                 ```lean
                 def Ty.den: Ty -> Type
                 | nil => Unit
@@ -602,12 +602,12 @@
         ]
         ,
         [
-            #only("1-7", stack(dir: ltr, spacing: 3em,
-                uncover("5-", $[| dot |] = bold(1)$),
-                uncover("6-", 
-                    $[| Γ, x: A |] = #uncover("4-", optm) [|A|] × [| Γ |]$)
+            #only("1-9", stack(dir: ltr, spacing: 3em,
+                uncover("6-", $[| dot |] = bold(1)$),
+                uncover("7-", 
+                    $[| Γ, x: A |] = #uncover("8-", optm) [|A|] × [| Γ |]$)
             ))
-            #only("8-")[
+            #only("10-")[
                 ```lean
                 inductive Ctx.den: Ctx -> Type
                 | nil: Ctx.den []
@@ -856,22 +856,24 @@
 ]
 
 #let ert-ok-nil() = rule(name: "nil-ok", $dot med sans("ok")$, $$)
-#let ert-ok-cons(c, pg, pa) = rule(name: "nil-cons", $$)
+#let ert-ok-cons(c, pg, pa) = rule(name: "nil-cons", c, pg, pa)
 
 #slide[
     = "Dependent" Types
-    #align(horizon)[
+    #align(center + horizon, stack(dir: ttb, spacing: 3em,
         $
         Γ ⊢ A med sans("ty")
-        $
-        #only("2-")[
-            #proof-tree(ert-ok-nil())
-            #proof-tree(ert-ok-cons($Γ, x: A med sans("ok")$, $Γ med sans("ok")$, $Γ ⊢ A med sans("ty")$))
-        ]
-        #only("3-")[
+        $,
+        only("2-")[
+            #stack(dir: ltr, spacing: 3em, 
+                proof-tree(ert-ok-nil()),
+                proof-tree(ert-ok-cons($Γ, x: A med sans("ok")$, $Γ med sans("ok")$, $Γ ⊢ A med sans("ty")$))
+            )
+        ],
+        only("3-")[
             *Lemma* (Regularity): $Γ ⊢ a: A ==> Γ ⊢ A med sans("ty")$
         ]
-    ]
+    ))
 ]
 
 #slide[
@@ -879,12 +881,12 @@
     #align(horizon)[
         #only("1")[
             $
-            [|A|]: 𝒫([||A||])
+            [|A|]: 𝒫([| |A| |])
             $
         ]
         #only("2")[
             $
-            [|Γ ⊢ A med sans("ty")|]: [||Γ||] -> 𝒫([||A||])
+            [|Γ ⊢ A med sans("ty")|]: [| |Γ| |] -> 𝒫([| |A| |])
             $
         ]
     ]
@@ -894,10 +896,10 @@
     = Semantics of Refined Contexts
     #align(horizon)[
         $
-        [|Γ ⊢ A med sans("ty")|]: [||Γ||] -> 𝒫([||A||])
+        [|Γ ⊢ A med sans("ty")|]: [| |Γ| |] -> 𝒫([| |A| |])
         $
         $
-        [|Γ med sans("ok")|]: 𝒫([||Γ||])
+        [|Γ med sans("ok")|]: 𝒫([| |Γ| |])
         $
         #uncover("2-")[
             $
@@ -914,7 +916,7 @@
         *Theorem* (Semantic Regularity):
         $
         Γ ⊢ a: A ==> ∀ G ∈ [|Γ med sans("ok")|],
-            [||Γ| ⊢ |a|: |A||] med G ∈ [|Γ ⊢ A med sans("ty")|] 
+            [| |Γ| ⊢ |a|: |A| |] med G ∈ [|Γ ⊢ A med sans("ty")|] 
         $
     ]
 ]
