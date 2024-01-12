@@ -28,7 +28,7 @@
 
 #slide[
     = The Plan
-    #line-by-line[
+    #line-by-line(start: 2)[
         - Speedrun STLC w/ de-Bruijn indices tutorial
             - See #link("https://leanprover.github.io/lean4/doc/examples/deBruijn.lean.html")[Dependent de Bruijn indices in the Lean Manual]
         - Sketch syntactic weakening and substitution #newmark
@@ -36,7 +36,7 @@
         - Sketch refinement types #newmark
         - *Hopefully*: sketch _semantic regularity_ #newmark
     ]
-    #uncover("6-")[
+    #uncover("7-")[
         *Follow along at:* #link("https://github.com/explicit-refinement/ert-lean-together")
     ]
 ]
@@ -82,6 +82,10 @@
     ))
 ]
 
+#focus-slide[
+    = Properties of Type Theories
+]
+
 #slide[
     = Weakening
     #align(center + horizon)[
@@ -92,7 +96,7 @@
 #slide[
     #align(center + horizon)[
         *Lemma* (Weakening):
-        #uncover("2-")[*If* $Δ ⊆ Γ$]
+        #uncover("2-")[*If* $Γ ⊇ Δ$]
         #uncover("3-")[and $Δ ⊢ a: A$,]
         #uncover("4-")[*then* $Γ ⊢ a: A$]
     ]
@@ -125,16 +129,17 @@
         #stack(dir: ttb, spacing: 2em,
             [
                 Given $σ: sans("Var") -> sans("Stlc")$,
-                #uncover("2-")[$∀x, x: A ∈ Δ ==> Γ ⊢ σ(x): A$]
+                #uncover("2-", [we say $σ: Γ -> Δ$ if])
+                #uncover("3-")[$∀x, x: A ∈ Δ ==> Γ ⊢ σ(x): A$]
             ],
             [
-                #uncover("3-")[*Lemma* (Substitution):]
-                #uncover("4-")[*If* $σ: Γ -> Δ$, ]
-                #uncover("5-")[$Δ ⊢ a: A$]
-                #uncover("6-")[*then* $Γ ⊢ [σ]a: A$]
+                #uncover("4-")[*Lemma* (Substitution):]
+                #uncover("5-")[*If* $σ: Γ -> Δ$, ]
+                #uncover("6-")[$Δ ⊢ a: A$]
+                #uncover("7-")[*then* $Γ ⊢ [σ]a: A$]
             ],
             [
-                #uncover("7-")[Here $[σ]$ denotes *capture-avoiding* substitution.]
+                #uncover("8-")[Here $[σ]$ denotes *capture-avoiding* substitution.]
             ]
         )
     ]
@@ -168,7 +173,7 @@
         align(left, $s, t ::= x | s med t | λ x: A. t | () | n | attach(⊥, br: A)$),
         uncover("2-", $ ⇝ $),
         align(left,[ 
-        #only("-3", uncover("2-", ```lean
+        #only("-4", uncover("2-", ```lean
         inductive Stlc: Type
         | var -- ???
         | app (s t: Stlc)
@@ -177,7 +182,7 @@
         | cnst (n: Nat)
         | abort (A: Ty)
         ```))
-        #only("6-", ```lean
+        #only("5-", ```lean
         inductive Stlc: Type
         | var (n: Nat)
         | app (s t: Stlc)
@@ -193,12 +198,9 @@
         // def Ctx := List Ty
         // ```)),
     ))
-    #only("3-")[
-        Issues:
-        #only("4-")[- Want $λ x: A. x = λ y: A. y$ ($α$-conversion)]
-        #only("5-")[- Need to impelement capture-avoiding substitution]
-        #only("6")[*Solution: de Bruijn indices*]
-    ]
+    #only("3-")[- Want $λ x: A. x = λ y: A. y$ ($α$-conversion)]
+    #only("4-")[- Need to impelement capture-avoiding substitution]
+    #only("5-")[*Solution: de Bruijn indices*]
 ]
 
 #let mkred(x) = text(red, x)
@@ -334,22 +336,22 @@
         ```lean
         inductive Wk: (Nat -> Nat) -> Ctx -> Ctx -> Type
         ```
-        #uncover("2-")[
+        #uncover("3-")[
             ```lean
             | nil: Wk ρ [] []
             ```
         ]
-        #uncover("3-")[
+        #uncover("4-")[
             ```lean
             | lift: Wk ρ Γ Δ -> Wk (liftWk ρ) (A::Γ) (A::Δ)
             ```
         ]
-        #uncover("4-")[
+        #uncover("5-")[
             ```lean
             | step: Wk ρ Γ Δ -> Wk (stepWk ρ) (A::Γ) Δ  
             ```
         ]
-        #uncover("3-")[
+        #only("4")[
             ```lean
 
             def liftWk (ρ: Nat -> Nat): Nat -> Nat
@@ -357,9 +359,16 @@
             | n + 1 => (ρ n) + 1
             ```
         ]
-        #uncover("4-")[
+        #only("5")[
             ```lean
+
             def stepWk (ρ: Nat -> Nat) (n: Nat): Nat := (ρ n) + 1
+            ```
+        ]
+        #uncover("2-")[
+            ```lean
+
+            def Var.wk: Wk ρ Γ Δ -> Var Δ n A -> Var Γ (ρ n) A
             ```
         ]
     ]
@@ -373,7 +382,7 @@
     | lift: Wk ρ Γ Δ -> Wk (liftWk ρ) (A::Γ) (A::Δ)
     | step: Wk ρ Γ Δ -> Wk (stepWk ρ) (A::Γ) Δ  
 
-    def Var.wk: Wk ρ Γ Δ -> Var Δ A -> Var Γ A
+    def Var.wk: Wk ρ Γ Δ -> Var Δ n A -> Var Γ (ρ n) A
     | lift R, head => head
     | lift R, tail v
     | step R, v => tail (v.wk R)
@@ -482,7 +491,7 @@
     = Substitution
     #align(horizon)[
         #only("1", align(center)[
-            $∀x, x: A ∈ Δ ==> Γ ⊢ σ(x): A$
+            $σ: Γ -> Δ <==> ∀x, x: A ∈ Δ ==> Γ ⊢ σ(x): A$
         ])
         #only("2-")[
             ```lean
@@ -517,7 +526,7 @@
             ]
             #only("7")[
                 ```lean
-                Subst S Γ Δ -> Subst S.lift (A :: Γ) (A :: Δ)
+                Subst σ Γ Δ -> Subst (liftSubst σ) (A :: Γ) (A :: Δ)
                 ```
             ]
         ]
@@ -804,11 +813,11 @@
     = Ghosts and proofs
     #align(horizon)[
         $
-        ∀a: ℕ, { ℓ: [ℕ] | sans("len") med ℓ = a } -> { n: ℕ | n = a }
+        ∀a, b: ℕ. a + b = b + a
         $
         #only("2-", 
         $
-        ∀a, b: ℕ. a + b = b + a
+        ∀a: ℕ, { ℓ: [ℕ] | sans("len") med ℓ = a } -> { n: ℕ | n = a }
         $
         )
     ]
@@ -843,6 +852,70 @@
             
             (by $η$) 
         ]
+    ]
+]
+
+#let ert-ok-nil() = rule(name: "nil-ok", $dot med sans("ok")$, $$)
+#let ert-ok-cons(c, pg, pa) = rule(name: "nil-cons", $$)
+
+#slide[
+    = "Dependent" Types
+    #align(horizon)[
+        $
+        Γ ⊢ A med sans("ty")
+        $
+        #only("2-")[
+            #proof-tree(ert-ok-nil())
+            #proof-tree(ert-ok-cons($Γ, x: A med sans("ok")$, $Γ med sans("ok")$, $Γ ⊢ A med sans("ty")$))
+        ]
+        #only("3-")[
+            *Lemma* (Regularity): $Γ ⊢ a: A ==> Γ ⊢ A med sans("ty")$
+        ]
+    ]
+]
+
+#slide[
+    = Semantics of Refinement Types
+    #align(horizon)[
+        #only("1")[
+            $
+            [|A|]: 𝒫([||A||])
+            $
+        ]
+        #only("2")[
+            $
+            [|Γ ⊢ A med sans("ty")|]: [||Γ||] -> 𝒫([||A||])
+            $
+        ]
+    ]
+]
+
+#slide[
+    = Semantics of Refined Contexts
+    #align(horizon)[
+        $
+        [|Γ ⊢ A med sans("ty")|]: [||Γ||] -> 𝒫([||A||])
+        $
+        $
+        [|Γ med sans("ok")|]: 𝒫([||Γ||])
+        $
+        #uncover("2-")[
+            $
+            [|dot med sans("ok")|] &= bold(1) \
+            [|Γ, x: A med sans("ok")|] &= [|Γ med sans("ok")|] × [|Γ ⊢ A med sans("ty")|]
+            $
+        ]
+    ]
+]
+
+#slide[
+    = Semantic Regularity
+    #align(horizon)[
+        *Theorem* (Semantic Regularity):
+        $
+        Γ ⊢ a: A ==> ∀ G ∈ [|Γ med sans("ok")|],
+            [||Γ| ⊢ |a|: |A||] med G ∈ [|Γ ⊢ A med sans("ty")|] 
+        $
     ]
 ]
 
